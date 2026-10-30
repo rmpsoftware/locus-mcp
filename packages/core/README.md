@@ -85,13 +85,13 @@ const configPath = findConfigFile(process.cwd());
 const { config, rootPath } = loadConfig(process.cwd());
 
 console.log(rootPath);        // resolved project root
-console.log(config.warm);     // languages to pre-start
 console.log(config.servers);  // language server definitions
 
 const registry = createRegistry(config);
 const tsServer = registry.getById("typescript");
 
 console.log(tsServer?.command); // e.g. "typescript-language-server"
+console.log(tsServer?.warm);    // whether locus warm pre-starts this server
 ```
 
 ### Connect to a language server

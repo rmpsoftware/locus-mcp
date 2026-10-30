@@ -35,10 +35,10 @@ describe("findConfigFile", () => {
 
   it("ignores locus.toml and prefers locus.json over .lsp.json", () => {
     writeFileSync(join(tempDir, "locus.toml"), "invalid TOML");
-    writeFileSync(join(tempDir, "locus.json"), '{"root":".","warm":["server"]}');
+    writeFileSync(join(tempDir, "locus.json"), '{"root":"."}');
     writeFileSync(join(tempDir, ".lsp.json"), "{}");
     assert.equal(findConfigFile(tempDir), join(tempDir, "locus.json"));
-    assert.deepEqual(loadConfig(tempDir).config.warm, ["server"]);
+    assert.equal(loadConfig(tempDir).config.root, ".");
   });
 
   it("ignores a nested locus.toml when discovering a parent JSON config", () => {
@@ -75,6 +75,7 @@ describe("loadConfig .lsp.json compatibility", () => {
       root: "project", servers: [{
         id: "ts", languageId: "typescript", extensions: [".ts"], command: "mock",
         description: "Frontend project",
+        warm: true,
         ignoreDirectories: ["generated"],
         autoOpenFiles: ["src/main.ts"],
         initSleep: 2000,
@@ -86,6 +87,7 @@ describe("loadConfig .lsp.json compatibility", () => {
     assert.deepEqual(createRegistry(config).getById("ts")?.autoOpenFiles, ["src/main.ts"]);
     assert.equal(createRegistry(config).getById("ts")?.initSleep, 2000);
     assert.equal(createRegistry(config).getById("ts")?.description, "Frontend project");
+    assert.equal(createRegistry(config).getById("ts")?.warm, true);
   });
 
   it("converts languageServer block to server entry", () => {
@@ -94,6 +96,7 @@ describe("loadConfig .lsp.json compatibility", () => {
       JSON.stringify({
         languageServer: {
           description: "Legacy project",
+          warm: true,
           command: "custom-ts-lsp",
           args: ["--stdio"],
           autoOpenFiles: ["src/main.ts"],
@@ -110,6 +113,7 @@ describe("loadConfig .lsp.json compatibility", () => {
     assert.deepEqual(config.servers?.find((s) => s.command === "custom-ts-lsp")?.autoOpenFiles, ["src/main.ts"]);
     assert.equal(config.servers?.find((s) => s.command === "custom-ts-lsp")?.initSleep, 1500);
     assert.equal(config.servers?.find((s) => s.command === "custom-ts-lsp")?.description, "Legacy project");
+    assert.equal(config.servers?.find((s) => s.command === "custom-ts-lsp")?.warm, true);
   });
 
   it("merges servers array from .lsp.json", () => {
@@ -120,6 +124,7 @@ describe("loadConfig .lsp.json compatibility", () => {
           {
             id: "ruby",
             description: "Ruby project",
+            warm: true,
             languageId: "ruby",
             extensions: [".rb"],
             command: "solargraph",
@@ -137,12 +142,19 @@ describe("loadConfig .lsp.json compatibility", () => {
     assert.ok(config.servers?.every((s) => s.id !== "ruby" || s.autoOpenFiles?.[0] === "lib/app.rb"));
     assert.ok(config.servers?.every((s) => s.id !== "ruby" || s.initSleep === 500));
     assert.ok(config.servers?.every((s) => s.id !== "ruby" || s.description === "Ruby project"));
+    assert.ok(config.servers?.every((s) => s.id !== "ruby" || s.warm === true));
   });
 
-  it("loads locus.json with warm array", () => {
+  it("rejects the obsolete top-level warm array with migration guidance", () => {
     writeFileSync(join(tempDir, "locus.json"), '{"root":".","warm":["typescript","python"]}');
-    const { config } = loadConfig(tempDir);
-    assert.deepEqual(config.warm, ["typescript", "python"]);
+    assert.throws(() => loadConfig(tempDir), /set warm on each server/);
+  });
+
+  it("rejects non-boolean server warm flags", () => {
+    writeFileSync(join(tempDir, "locus.json"), JSON.stringify({
+      servers: [{ id: "ts", languageId: "typescript", extensions: [".ts"], command: "mock", warm: "true" }],
+    }));
+    assert.throws(() => loadConfig(tempDir), /Invalid warm flag for server "ts": expected a boolean/);
   });
 
   it("throws on invalid locus.json", () => {
@@ -214,5 +226,30 @@ describe("config serialization", () => {
     const parsed = JSON.parse(configToJson(config));
     assert.ok(parsed.root);
     assert.ok(Array.isArray(parsed.servers));
+  });
+
+  it("generates per-server warm flags for detected languages without mutating builtins", () => {
+    const dir = mkdtempSync(join(tmpdir(), "locus-default-"));
+    try {
+      writeFileSync(join(dir, "pyproject.toml"), "");
+      const config = generateDefaultConfig(dir);
+      assert.deepEqual(config.servers?.map((server) => [server.id, server.warm]), [
+        ["typescript", false], ["python", true],
+      ]);
+      assert.ok(createRegistry({}).list().every((server) => server.warm === undefined));
+      assert.equal("warm" in JSON.parse(configToJson(config)), false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("defaults to warming TypeScript when no languages are detected", () => {
+    const dir = mkdtempSync(join(tmpdir(), "locus-default-"));
+    try {
+      const config = generateDefaultConfig(dir);
+      assert.deepEqual(config.servers?.filter((server) => server.warm).map((server) => server.id), ["typescript"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

@@ -93,6 +93,14 @@ export class LspManager {
       ? this.configs.filter((c) => ids.includes(c.id))
       : this.configs;
 
+    await this.warmTargets(targets);
+  }
+
+  async warmConfigured(): Promise<void> {
+    await this.warmTargets(this.configs.filter((config) => config.warm === true));
+  }
+
+  private async warmTargets(targets: LanguageServerConfig[]): Promise<void> {
     for (const config of targets) {
       try {
         await this.clientFor(config).start();

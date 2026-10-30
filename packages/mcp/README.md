@@ -144,6 +144,9 @@ Locus discovers config by walking up from the project root:
 | `.lsp.json` | Compatibility with Claude Code Open Plugins |
 
 Run `locus init` to generate defaults. Built-in servers cover TypeScript/JavaScript, Python, Go, and Rust when no custom config is provided.
+Set `"warm": true` on each server selected by `locus warm`. If no server has a
+`warm` flag, the command uses detected language IDs, or all servers when none
+are detected. Replace legacy top-level `warm` arrays with per-server flags.
 
 ## Install options
 

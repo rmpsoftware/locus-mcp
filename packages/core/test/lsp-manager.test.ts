@@ -172,7 +172,7 @@ describe("LspManager", () => {
         return mockConnection();
       };
 
-    await manager.warm(["typescript"]);
+    await manager.warm(["fake-ts"]);
     const statuses = await manager.status();
     const ts = statuses.find((s) => s.languageId === "typescript");
     assert.ok(ts);
@@ -203,7 +203,7 @@ describe("LspManager", () => {
         return mockConnection();
       };
 
-    await manager.warm(["typescript"]);
+    await manager.warm(["fake-ts"]);
     await manager.stopAll();
 
     const statuses = await manager.status();
@@ -377,9 +377,31 @@ describe("LspManager", () => {
       });
       manager = new LspManager(tempDir, [server("a"), server("b")]);
 
-      await manager.warm(["typescript"]);
+      await manager.warm(["a", "b"]);
       const statuses = await manager.status();
       assert.deepEqual(statuses.map((s) => [s.id, s.warmed]), [["a", false], ["b", true]]);
+    });
+
+    it("warms only flagged server configurations, even with shared IDs", async () => {
+      tempDir = mkdtempSync(join(tmpdir(), "locus-manager-"));
+      useMockConnections();
+      manager = new LspManager(tempDir, [
+        { ...server("same", "web"), warm: true },
+        { ...server("same", "api"), warm: false },
+        server("other"),
+      ]);
+
+      await manager.warmConfigured();
+      assert.deepEqual((await manager.status()).map((s) => s.warmed), [true, false, false]);
+    });
+
+    it("does not start any servers when none are flagged", async () => {
+      tempDir = mkdtempSync(join(tmpdir(), "locus-manager-"));
+      useMockConnections();
+      manager = new LspManager(tempDir, [{ ...server("a"), warm: false }, server("b")]);
+
+      await manager.warmConfigured();
+      assert.deepEqual((await manager.status()).map((s) => s.state), ["stopped", "stopped"]);
     });
   });
 });

@@ -3,6 +3,7 @@
   "servers": [
     {
       "id": "typescript",
+      "warm": true,
       "languageId": "typescript",
       "extensions": [
         ".ts",
@@ -19,8 +20,5 @@
         "--stdio"
       ]
     }
-  ],
-  "warm": [
-    "typescript"
   ]
 }

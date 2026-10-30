@@ -201,6 +201,9 @@ npx @rmpsoftware/locus-mcp warm    # Pre-start servers (optional)
 npx @rmpsoftware/locus-mcp serve   # Started by your MCP host — not manually
 ```
 
+Configure `locus warm` with `warm: true` on individual server entries in
+`locus.json`. See [configuration](./configuration.md) for details.
+
 ---
 
 ## Troubleshooting

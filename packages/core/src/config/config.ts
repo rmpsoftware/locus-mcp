@@ -7,12 +7,12 @@ import { LanguageServerRegistry } from "../registry/registry.js";
 export interface LocusConfig {
   root?: string;
   servers?: LanguageServerConfig[];
-  warm?: string[];
 }
 
 export interface LspJsonManifest {
   languageServer?: {
     description?: string;
+    warm?: boolean;
     command?: string;
     args?: string[];
     autoOpenFiles?: string[];
@@ -22,6 +22,7 @@ export interface LspJsonManifest {
   servers?: Array<{
     id?: string;
     description?: string;
+    warm?: boolean;
     languageId?: string;
     extensions?: string[];
     command?: string;
@@ -60,8 +61,18 @@ export function loadConfig(cwd: string = process.cwd()): { config: LocusConfig; 
     const raw = readFileSync(configPath, "utf8");
     config = JSON.parse(raw) as LocusConfig;
 
+    if ("warm" in config) {
+      throw new Error("Top-level warm is no longer supported; set warm on each server instead");
+    }
+
     if (configPath.endsWith(".lsp.json")) {
       config = convertLspJson(JSON.parse(raw) as LspJsonManifest, config);
+    }
+
+    for (const server of config.servers ?? []) {
+      if (server.warm !== undefined && typeof server.warm !== "boolean") {
+        throw new Error(`Invalid warm flag for server "${server.id}": expected a boolean`);
+      }
     }
   }
 
@@ -83,6 +94,7 @@ function convertLspJson(manifest: LspJsonManifest, existing: LocusConfig): Locus
       servers.push({
         id: entry.id ?? entry.languageId,
         description: entry.description,
+        warm: entry.warm,
         languageId: entry.languageId,
         extensions: entry.extensions ?? [],
         command: entry.command,
@@ -101,6 +113,7 @@ function convertLspJson(manifest: LspJsonManifest, existing: LocusConfig): Locus
     servers.push({
       id: languageId,
       description: manifest.languageServer.description,
+      warm: manifest.languageServer.warm,
       languageId,
       extensions,
       command: manifest.languageServer.command,
@@ -137,12 +150,14 @@ export function generateDefaultConfig(rootPath: string): LocusConfig {
   const languages = detectProjectLanguages(rootPath);
   const servers = BUILTIN_SERVERS.filter(
     (s) => languages.length === 0 || languages.includes(s.languageId) || s.languageId === "typescript",
-  );
+  ).map((s) => ({
+    ...s,
+    warm: languages.length ? languages.includes(s.languageId) : s.languageId === "typescript",
+  }));
 
   return {
     root: rootPath,
     servers,
-    warm: languages.length ? languages : ["typescript"],
   };
 }
 

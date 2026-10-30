@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { LspManager } from "@rmpsoftware/locus-core";
 import { runCli } from "../src/cli.js";
 
 describe("cli help", () => {
@@ -54,7 +55,7 @@ describe("cli init idempotent", () => {
     const dir = mkdtempSync(join(tmpdir(), "locus-cli-idempotent-"));
     const originalCwd = process.cwd();
     try {
-      const json = '{"root":".","warm":["custom"]}\n';
+      const json = '{"root":".","servers":[{"id":"custom","warm":true}]}\n';
       const toml = 'root = "legacy"\n';
       writeFileSync(join(dir, "locus.json"), json);
       writeFileSync(join(dir, "locus.toml"), toml);
@@ -90,6 +91,69 @@ describe("cli check", () => {
 });
 
 describe("cli warm", () => {
+  it("uses explicit server flags instead of language detection", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "locus-cli-warm-flags-"));
+    const originalCwd = process.cwd();
+    const configured = mock.method(LspManager.prototype, "warmConfigured", async () => {});
+    const fallback = mock.method(LspManager.prototype, "warm", async () => {});
+    try {
+      writeFileSync(join(dir, "package.json"), "{}");
+      writeFileSync(join(dir, "locus.json"), JSON.stringify({
+        servers: [
+          { id: "custom", languageId: "typescript", extensions: [".ts"], command: "node", warm: true },
+          { id: "other", languageId: "typescript", extensions: [".ts"], command: "node", warm: false },
+        ],
+      }));
+      await runCli(["warm", "--cwd", dir]);
+      assert.equal(configured.mock.callCount(), 1);
+      assert.equal(fallback.mock.callCount(), 0);
+    } finally {
+      configured.mock.restore();
+      fallback.mock.restore();
+      process.chdir(originalCwd);
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("retains language detection when no server has a warm flag", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "locus-cli-warm-detect-"));
+    const originalCwd = process.cwd();
+    const fallback = mock.method(LspManager.prototype, "warm", async () => {});
+    try {
+      writeFileSync(join(dir, "package.json"), "{}");
+      await runCli(["warm", "--cwd", dir]);
+      assert.deepEqual(fallback.mock.calls[0]?.arguments, [["typescript"]]);
+    } finally {
+      fallback.mock.restore();
+      process.chdir(originalCwd);
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("treats an explicit false flag as selecting no servers", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "locus-cli-warm-disabled-"));
+    const originalCwd = process.cwd();
+    const configured = mock.method(LspManager.prototype, "warmConfigured", async () => {});
+    const fallback = mock.method(LspManager.prototype, "warm", async () => {});
+    let output = "";
+    const log = mock.method(console, "log", (message: string) => { output += `${message}\n`; });
+    try {
+      writeFileSync(join(dir, "locus.json"), JSON.stringify({
+        servers: [{ id: "custom", languageId: "typescript", extensions: [".ts"], command: "node", warm: false }],
+      }));
+      await runCli(["warm", "--cwd", dir]);
+      assert.equal(configured.mock.callCount(), 1);
+      assert.equal(fallback.mock.callCount(), 0);
+      assert.match(output, /Warming: no servers/);
+    } finally {
+      log.mock.restore();
+      configured.mock.restore();
+      fallback.mock.restore();
+      process.chdir(originalCwd);
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it("runs warm without throwing", async () => {
     const dir = mkdtempSync(join(tmpdir(), "locus-cli-warm-"));
     const originalCwd = process.cwd();

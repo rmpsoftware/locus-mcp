@@ -17,7 +17,7 @@ describe("createLocusContext", () => {
   });
 
   it("loads config and sets rootPath from cwd", () => {
-    writeFileSync(join(tempDir, "locus.json"), JSON.stringify({ warm: ["typescript"] }));
+    writeFileSync(join(tempDir, "locus.json"), JSON.stringify({ root: "." }));
 
     const ctx = createLocusContext(tempDir);
 

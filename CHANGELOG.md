@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SymbolResolver.findByName` takes an array of clients and reports per-server `failures`
 - `status`, `locus check` and `locus warm` identify servers by `id`, and warm state is tracked per server
 - Tools return `file_not_found` for a file that does not exist instead of querying servers about it
+- `locus warm` selects individual servers using their boolean `warm` flag; migrate top-level `warm` arrays to flags on the corresponding server entries
 
 ### Removed
 

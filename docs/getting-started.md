@@ -83,6 +83,10 @@ Optional — pre-start servers before a long agent session:
 npx @rmpsoftware/locus-mcp warm
 ```
 
+`locus init` sets a `warm` flag on each generated server. Edit these flags in
+`locus.json` to select which servers the command starts; see
+[configuration](./configuration.md) for fallback behavior and migration.
+
 ## Step 4: Add Locus to your agent
 
 Pick your tool and paste the config. Replace `/absolute/path/to/your/project` with your real project path.

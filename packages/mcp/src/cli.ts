@@ -2,7 +2,6 @@
 import { writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
-  loadConfig,
   generateDefaultConfig,
   configToJson,
   detectProjectLanguages,
@@ -107,13 +106,17 @@ async function runCheck(cwd: string): Promise<void> {
 }
 
 async function runWarm(cwd: string): Promise<void> {
-  const { config } = loadConfig(cwd);
   const ctx = createLocusContext(cwd);
 
-  const langs = config.warm ?? detectProjectLanguages(ctx.rootPath);
-  console.log(`Warming: ${langs.join(", ") || "all servers"}`);
-
-  await ctx.manager.warm(langs.length ? langs : undefined);
+  if (ctx.configs.some((server) => server.warm !== undefined)) {
+    const targets = ctx.configs.filter((server) => server.warm === true);
+    console.log(`Warming: ${targets.map((server) => server.id).join(", ") || "no servers"}`);
+    await ctx.manager.warmConfigured();
+  } else {
+    const langs = detectProjectLanguages(ctx.rootPath);
+    console.log(`Warming: ${langs.join(", ") || "all servers"}`);
+    await ctx.manager.warm(langs.length ? langs : undefined);
+  }
   const statuses = await ctx.manager.status();
 
   for (const s of statuses) {

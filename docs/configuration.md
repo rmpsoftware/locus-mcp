@@ -2,9 +2,11 @@
 
 Locus discovers configuration by walking up from the current working directory. The first match wins within each directory; file priority is `locus.json` → `.lsp.json`.
 
-Locus no longer reads `locus.toml`. If you used one, move its `root` and
-`warm` settings into `locus.json`, preserving any server definitions already
-there. The JSON file is now used even when a legacy TOML file exists beside it.
+Locus no longer reads `locus.toml`. Move its `root` and server definitions
+into `locus.json`. Replace any top-level `warm` array (in TOML or JSON) with
+`"warm": true` on each server to pre-start. The JSON file is used even when a
+legacy TOML file exists beside it.
+Top-level `warm` in `locus.json` or `.lsp.json` is rejected with a migration error.
 
 ## locus.json
 
@@ -13,10 +15,10 @@ Full server configuration example:
 ```json
 {
   "root": ".",
-  "warm": ["typescript", "python"],
   "servers": [
     {
       "id": "typescript",
+      "warm": true,
       "description": "Frontend TypeScript project",
       "root": "frontend",
       "ignoreDirectories": ["node_modules", "dist"],
@@ -29,6 +31,7 @@ Full server configuration example:
     },
     {
       "id": "python",
+      "warm": true,
       "ignoreDirectories": ["__pycache__"],
       "languageId": "python",
       "extensions": [".py", ".pyi"],
@@ -44,7 +47,6 @@ Full server configuration example:
 | Field | Type | Description |
 |-------|------|-------------|
 | `root` | string | Project root path (default: directory containing config) |
-| `warm` | string[] | Language IDs to pre-start via `locus warm` |
 | `servers` | array | Language server definitions |
 
 ### Server entry fields
@@ -53,6 +55,7 @@ Full server configuration example:
 |-------|----------|-------------|
 | `id` | yes | Unique identifier |
 | `description` | no | Human-readable project description returned by `list_projects`; does not affect server behavior |
+| `warm` | no | Boolean selecting this server for `locus warm` |
 | `languageId` | yes | LSP language ID sent on document open |
 | `extensions` | yes | File extensions this server handles |
 | `command` | yes | Executable name or path |
@@ -63,6 +66,12 @@ Full server configuration example:
 | `initSleep` | no | Delay in milliseconds after initialization and opening files; positive integers wait, zero or negative values disable the delay |
 
 When `servers` is omitted or empty, Locus uses built-in defaults.
+
+The `warm` flag must be a boolean. If any server specifies `warm`, `locus warm` starts only servers with `warm: true`;
+`false` or omitted flags are not selected. If none specifies it, the command
+uses detected language IDs as server IDs, or starts all servers if no languages
+are detected. `locus init` sets the flags based on detected languages, defaulting
+to TypeScript when none are detected.
 
 `autoOpenFiles` can initialize a language server's project before a workspace symbol search. For TypeScript, list a source file belonging to the project, such as `src/main.ts`, rather than `tsconfig.json`. Files are opened again when the server restarts; a missing or unreadable file causes startup to fail with an error.
 
@@ -121,6 +130,7 @@ Locus reads `.lsp.json` for compatibility with Claude Code Open Plugins and simi
 
 Locus converts this into an additional server entry merged with defaults.
 An optional `description` in the `languageServer` block is returned by `list_projects`.
+The block also accepts an optional `warm` flag.
 
 ### `servers` array
 
@@ -138,7 +148,7 @@ An optional `description` in the `languageServer` block is returned by `list_pro
 }
 ```
 
-Custom servers from `.lsp.json` are appended to the configured server list. Each entry can also include an optional `description`.
+Custom servers from `.lsp.json` are appended to the configured server list. Each entry can also include optional `description` and `warm` fields.
 
 ## Built-in language servers
 

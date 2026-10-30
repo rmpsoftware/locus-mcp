@@ -44,7 +44,7 @@ describe("createLocusServer", () => {
 
   beforeEach(() => {
     tempDir = mkdtempSync(join(tmpdir(), "locus-server-"));
-    writeFileSync(join(tempDir, "locus.json"), JSON.stringify({ warm: ["typescript"] }));
+    writeFileSync(join(tempDir, "locus.json"), JSON.stringify({ root: "." }));
 
     originalCreateConnection = (LspClient.prototype as unknown as { createConnection: LspClient["createConnection"] })
       .createConnection;
