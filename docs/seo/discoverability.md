@@ -49,7 +49,7 @@ Locus is an MCP server that exposes language-server navigation to AI agents thro
 
 ## Product description (long)
 
-Locus connects AI coding agents to Language Server Protocol backends via the Model Context Protocol. Instead of reading whole files or grepping for symbol names, agents call seven focused tools. Locus resolves symbols (including qualified names), handles ambiguity, and returns compact output. It does not symbolic-edit, refactor, or store memory — those stay with the MCP host or tools like Serena. Supports TypeScript, Python, Go, and Rust out of the box; reads locus.toml, locus.json, and .lsp.json; ships as `@rmpsoftware/locus-mcp` on npm.
+Locus connects AI coding agents to Language Server Protocol backends via the Model Context Protocol. Instead of reading whole files or grepping for symbol names, agents call seven focused tools. Locus resolves symbols (including qualified names), handles ambiguity, and returns compact output. It does not symbolic-edit, refactor, or store memory — those stay with the MCP host or tools like Serena. Supports TypeScript, Python, Go, and Rust out of the box; reads locus.json and .lsp.json; ships as `@rmpsoftware/locus-mcp` on npm.
 
 ## Comparison snippets
 

@@ -14,7 +14,7 @@ A factual comparison to help you pick the right MCP + code-intelligence setup fo
 | Output format | Compact line-oriented text | Mixed | Often verbose JSON | Mixed |
 | Works across hosts | Cursor, Codex, Claude Code, … | MCP hosts | MCP hosts | Claude Code only |
 | Built-in languages | 4 (TS/JS, Python, Go, Rust) | 40+ | Varies | Varies |
-| Config | locus.toml, locus.json, .lsp.json | Project-specific | Varies | cclsp config |
+| Config | locus.json, .lsp.json | Project-specific | Varies | cclsp config |
 | License | MIT | MIT | Varies | Check upstream |
 
 ## Locus

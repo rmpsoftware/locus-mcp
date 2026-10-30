@@ -18,6 +18,7 @@ function mockClient(overrides: Partial<LspClient> = {}): LspClient {
   const base = {
     id: "ts",
     serverState: "ready",
+    progress: { observed: false, active: [] },
     workspaceSymbol: async (query: string) => {
       if (query.includes("Greeter") || query === "Greeter") {
         return [
@@ -203,7 +204,20 @@ describe("handleLocate", () => {
     });
     const result = await handleLocate(ctx, { name: "NonExistent" });
     assert.match(resultText(result), /status: no_results/);
+    assert.match(resultText(result), /Workspace indexing state is unknown/);
     assert.equal(result.isError, true);
+  });
+
+  it("reports active work and preserves failures when no symbols are found", async () => {
+    const busy = mockClient({ id: "busy", progress: { observed: true, active: ["Loading projects"] }, workspaceSymbol: async () => [] });
+    const quiet = mockClient({ id: "quiet", progress: { observed: false, active: [] }, workspaceSymbol: async () => [] });
+    const failed = mockClient({ id: "failed", workspaceSymbol: async () => { throw new Error("failed to search"); } });
+    const result = await handleLocate(multiServerContext(busy, quiet, failed), { name: "Missing" });
+    const text = resultText(result);
+    assert.match(text, /status: no_results/);
+    assert.match(text, /busy: Loading projects/);
+    assert.match(text, /Workspace indexing state is unknown/);
+    assert.match(text, /failed failed.*failed to search/);
   });
 
   it("maps server_starting errors", async () => {

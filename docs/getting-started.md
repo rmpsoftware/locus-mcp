@@ -65,7 +65,7 @@ npx @rmpsoftware/locus-mcp init
 npx @rmpsoftware/locus-mcp check
 ```
 
-- `init` creates config files (`locus.toml`, `locus.json`) so Locus knows your project root and languages.
+- `init` creates `locus.json` so Locus knows your project root and languages.
 - `check` confirms language-server programs are installed and on your PATH.
 
 Example successful check:

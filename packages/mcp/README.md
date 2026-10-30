@@ -57,7 +57,7 @@ npx @rmpsoftware/locus-mcp init
 npx @rmpsoftware/locus-mcp check
 ```
 
-- `init` — creates `locus.toml` / `locus.json` config files
+- `init` — creates a `locus.json` config file
 - `check` — verifies language-server binaries are installed and on your PATH
 
 ### 3. Add to your agent (MCP config)
@@ -140,8 +140,7 @@ Locus discovers config by walking up from the project root:
 
 | File | Purpose |
 |------|---------|
-| `locus.toml` | Project root, warm languages |
-| `locus.json` | Language server definitions |
+| `locus.json` | Project root, warm servers, and language server definitions |
 | `.lsp.json` | Compatibility with Claude Code Open Plugins |
 
 Run `locus init` to generate defaults. Built-in servers cover TypeScript/JavaScript, Python, Go, and Rust when no custom config is provided.
@@ -179,7 +178,7 @@ Full guides live in the [Locus repository](https://github.com/rmpsoftware/locus-
 | [Getting started](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/getting-started.md) | First-time setup |
 | [Usage guide](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/usage.md) | Host setup and workflows |
 | [Tools reference](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/tools.md) | All seven tools with examples |
-| [Configuration](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/configuration.md) | `locus.toml`, language servers |
+| [Configuration](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/configuration.md) | `locus.json`, language servers |
 | [FAQ](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/faq.md) | Common questions |
 | [Comparison](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/comparison.md) | Locus vs Serena, grep, LSP bridges |
 

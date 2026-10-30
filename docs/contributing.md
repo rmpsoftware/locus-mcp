@@ -72,7 +72,7 @@ Integration tests skip automatically when LSP binaries are not on `PATH`.
 
 | Area | Package | Test files |
 |------|---------|------------|
-| Config (.lsp.json, locus.toml) | core | `config.test.ts` |
+| Config (.lsp.json, locus.json) | core | `config.test.ts` |
 | Registry | core | `format.test.ts`, `registry-extended.test.ts` |
 | Symbol resolver | core | `resolver.test.ts` |
 | Format layer | core | `format.test.ts`, `format-extended.test.ts` |

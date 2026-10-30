@@ -125,6 +125,7 @@ export function formatStatus(
     binaryAvailable: boolean;
     warmed: boolean;
     openDocuments: number;
+    progress?: { observed: boolean; active: string[] };
   }>,
 ): string {
   const lines = ["# Locus LSP Status", ""];
@@ -134,6 +135,9 @@ export function formatStatus(
     lines.push(
       `- **${s.id}** (${s.command}): ${s.state}, binary ${binary}, warmed=${s.warmed}, docs=${s.openDocuments}`,
     );
+    if (s.progress?.active.length) {
+      lines.push(`  Background work: ${s.progress.active.join("; ")}`);
+    }
   }
 
   return lines.join("\n");

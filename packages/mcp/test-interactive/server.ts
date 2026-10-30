@@ -15,10 +15,14 @@ import { shutdownContext } from "../src/context";
 const args = process.argv.slice(2);
 const option = (name: string, fallback: string): string => {
   const index = args.indexOf(`--${name}`);
-  return index >= 0 && args[index + 1] ? args[index + 1]! : fallback;
+  if (index < 0) return fallback;
+  const value = args[index + 1];
+  if (!value || value.startsWith("--")) throw new Error(`--${name} requires a value`);
+  return value;
 };
 const cwd = resolve(option("cwd", process.cwd()));
 const port = Number(option("port", process.env.PORT ?? "3333"));
+process.chdir(cwd);
 
 async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
   let raw = "";

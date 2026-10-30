@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - `LspManager.getClientForFile`, `configForFile` and `configForExtension`, replaced by the multi-server methods
+- `locus.toml` discovery, generation, and the `configToToml` API; migrate its settings to `locus.json`
 
 ### Fixed
 

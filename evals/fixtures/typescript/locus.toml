@@ -1,7 +1,0 @@
-# Locus configuration
-root = "D:\\code\\lsp-solution-mota\\evals\\fixtures\\typescript"
-
-warm = ["typescript"]
-
-# Language servers are configured in locus.json for now.
-# See README for server override examples.

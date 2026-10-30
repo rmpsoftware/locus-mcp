@@ -30,7 +30,7 @@ Building LSP integrations from scratch means handling process spawning, JSON-RPC
 | **Registry** | Declarative language-server configs with built-in defaults |
 | **Symbol layer** | Resolve qualified names and disambiguate workspace symbols |
 | **Format** | Convert LSP results to compact `path:line:col` text for agents |
-| **Config** | Load `locus.toml`, `locus.json`, and `.lsp.json` project configs |
+| **Config** | Load `locus.json` and `.lsp.json` project configs |
 
 ## What's included
 
@@ -57,7 +57,7 @@ Building LSP integrations from scratch means handling process spawning, JSON-RPC
 
 ### Config (`config/`)
 
-- Discover and load `locus.toml`, `locus.json`, `.lsp.json`
+- Discover and load `locus.json`, `.lsp.json`
 - Project language detection from markers (`tsconfig.json`, `pyproject.toml`, etc.)
 
 ## Installation

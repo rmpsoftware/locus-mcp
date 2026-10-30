@@ -129,7 +129,7 @@ Paste these into your agent after Locus is configured:
 | [Who is Locus for?](docs/positioning.md) | Fit, scope, and when to pick alternatives |
 | [Comparison](docs/comparison.md) | Locus vs Serena, bridges, and grep |
 | [Tools reference](docs/tools.md) | All seven MCP tools with examples |
-| [Configuration](docs/configuration.md) | `locus.toml`, `locus.json`, language servers |
+| [Configuration](docs/configuration.md) | `locus.json`, language servers |
 | [Website](https://paladini.github.io/locus-mcp/) | Lightweight positioning and quick overview |
 
 ## License

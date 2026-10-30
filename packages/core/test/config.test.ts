@@ -8,7 +8,6 @@ import {
   loadConfig,
   createRegistry,
   detectProjectLanguages,
-  configToToml,
   configToJson,
   generateDefaultConfig,
 } from "../src/index.js";
@@ -24,12 +23,7 @@ describe("findConfigFile", () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it("finds locus.toml in start directory", () => {
-    writeFileSync(join(tempDir, "locus.toml"), 'root = "."\n');
-    assert.equal(findConfigFile(tempDir), join(tempDir, "locus.toml"));
-  });
-
-  it("finds locus.json when toml is absent", () => {
+  it("finds locus.json", () => {
     writeFileSync(join(tempDir, "locus.json"), '{"root":"."}');
     assert.equal(findConfigFile(tempDir), join(tempDir, "locus.json"));
   });
@@ -39,10 +33,20 @@ describe("findConfigFile", () => {
     assert.equal(findConfigFile(tempDir), join(tempDir, ".lsp.json"));
   });
 
-  it("prefers locus.toml over locus.json", () => {
-    writeFileSync(join(tempDir, "locus.toml"), 'root = "."\n');
+  it("ignores locus.toml and prefers locus.json over .lsp.json", () => {
+    writeFileSync(join(tempDir, "locus.toml"), "invalid TOML");
+    writeFileSync(join(tempDir, "locus.json"), '{"root":".","warm":["server"]}');
+    writeFileSync(join(tempDir, ".lsp.json"), "{}");
+    assert.equal(findConfigFile(tempDir), join(tempDir, "locus.json"));
+    assert.deepEqual(loadConfig(tempDir).config.warm, ["server"]);
+  });
+
+  it("ignores a nested locus.toml when discovering a parent JSON config", () => {
+    const sub = join(tempDir, "nested");
+    mkdirSync(sub);
+    writeFileSync(join(sub, "locus.toml"), "invalid TOML");
     writeFileSync(join(tempDir, "locus.json"), '{"root":"."}');
-    assert.equal(findConfigFile(tempDir), join(tempDir, "locus.toml"));
+    assert.equal(findConfigFile(sub), join(tempDir, "locus.json"));
   });
 
   it("walks up to parent directory", () => {
@@ -129,8 +133,8 @@ describe("loadConfig .lsp.json compatibility", () => {
     assert.ok(config.servers?.every((s) => s.id !== "ruby" || s.initSleep === 500));
   });
 
-  it("loads locus.toml with warm array", () => {
-    writeFileSync(join(tempDir, "locus.toml"), 'root = "."\nwarm = ["typescript", "python"]\n');
+  it("loads locus.json with warm array", () => {
+    writeFileSync(join(tempDir, "locus.json"), '{"root":".","warm":["typescript","python"]}');
     const { config } = loadConfig(tempDir);
     assert.deepEqual(config.warm, ["typescript", "python"]);
   });
@@ -140,10 +144,6 @@ describe("loadConfig .lsp.json compatibility", () => {
     assert.throws(() => loadConfig(tempDir), SyntaxError);
   });
 
-  it("throws on invalid locus.toml", () => {
-    writeFileSync(join(tempDir, "locus.toml"), "root = [\n");
-    assert.throws(() => loadConfig(tempDir));
-  });
 });
 
 describe("createRegistry", () => {
@@ -203,12 +203,6 @@ describe("detectProjectLanguages", () => {
 });
 
 describe("config serialization", () => {
-  it("configToToml includes root and warm", () => {
-    const toml = configToToml({ root: "/proj", warm: ["typescript"] });
-    assert.match(toml, /root = "\/proj"/);
-    assert.match(toml, /warm = \["typescript"\]/);
-  });
-
   it("configToJson produces valid JSON", () => {
     const config = generateDefaultConfig(process.cwd());
     const parsed = JSON.parse(configToJson(config));

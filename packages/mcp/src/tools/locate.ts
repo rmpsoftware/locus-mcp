@@ -6,6 +6,7 @@ import {
   mergeSymbols,
   okResult,
   errorResult,
+  type LspClient,
 } from "@rmpsoftware/locus-core";
 import type { LocusServerContext } from "../context.js";
 import { allFailedResult, FILE_PATH_HINT, SERVER_FILTER_PROPERTIES, serverFilterError, serverFilterSchema, withFailures } from "./helpers.js";
@@ -63,7 +64,7 @@ export async function handleLocate(ctx: LocusServerContext, args: unknown): Prom
 
     const symbols = mergeSymbols(results.map((r) => r.value));
     if (symbols.length === 0) {
-      return textResult(withFailures(errorResult("no_results", "No symbols in document"), failures));
+      return textResult(withFailures(errorResult("no_results", `No symbols in document.\n${emptySearchContext(results.map((r) => r.client))}`), failures));
     }
 
     const lines = symbols.slice(0, 50).map((s) => {
@@ -89,7 +90,20 @@ export async function handleLocate(ctx: LocusServerContext, args: unknown): Prom
   }
 
   if (result.status === "no_results") {
-    return textResult(withFailures(errorResult("no_results", result.message ?? "No symbols found"), result.failures));
+    const failed = new Set(result.failures.map((failure) => failure.client));
+    const message = `${result.message ?? "No symbols found"}.\n${emptySearchContext(clients.filter((client) => !failed.has(client)))}`;
+    return textResult(withFailures(errorResult("no_results", message), result.failures));
+  }
+
+  function emptySearchContext(clients: LspClient[]): string {
+    const active = clients.flatMap((client) =>
+      client.progress.active.map((title) => `${client.id}: ${title}`),
+    );
+    const lines = active.length
+      ? [`Language servers report background work; results may be incomplete: ${active.join("; ")}.`]
+      : [];
+    lines.push("Workspace indexing state is unknown; results may be incomplete.");
+    return lines.join("\n");
   }
 
   const lines = result.symbols.map((s) => formatSymbolLocation(s, ctx.rootPath));

@@ -1,19 +1,10 @@
 # Configuration
 
-Locus discovers configuration by walking up from the current working directory. The first match wins within each directory; file priority is `locus.toml` → `locus.json` → `.lsp.json`.
+Locus discovers configuration by walking up from the current working directory. The first match wins within each directory; file priority is `locus.json` → `.lsp.json`.
 
-## locus.toml
-
-Minimal TOML config for project root and warm languages:
-
-```toml
-# Locus configuration
-root = "."
-
-warm = ["typescript", "python"]
-```
-
-Server definitions live in `locus.json` (see below). TOML is preferred for human-edited project settings.
+Locus no longer reads `locus.toml`. If you used one, move its `root` and
+`warm` settings into `locus.json`, preserving any server definitions already
+there. The JSON file is now used even when a legacy TOML file exists beside it.
 
 ## locus.json
 
@@ -65,7 +56,7 @@ Full server configuration example:
 | `command` | yes | Executable name or path |
 | `ignoreDirectories` | no | Directory names skipped at any depth by this server's file watcher and filename search, for example `["bin", "obj"]`. Replaces the built-in list when you define your own servers |
 | `root` | no | Server workspace root and process working directory, relative to the project root; defaults to the project root |
-| `args` | no | CLI arguments (use `["--stdio"]` for stdio servers) |
+| `args` | no | CLI arguments (use `["--stdio"]` for stdio servers); relative paths are resolved by the launched program from the server root |
 | `autoOpenFiles` | no | Files to open after initialization, relative to the server root (absolute paths are also supported) |
 | `initSleep` | no | Delay in milliseconds after initialization and opening files; positive integers wait, zero or negative values disable the delay |
 
@@ -163,7 +154,9 @@ If you install Pyright via pip, ensure the Python Scripts directory is on `PATH`
 
 ## CLI environment
 
-All commands accept `--cwd <path>` to set the project root:
+All commands accept `--cwd <path>` to set the process working directory and
+project root. Relative paths are resolved from the original working directory.
+The directory must exist, except for `init`, which creates it if needed:
 
 ```bash
 locus serve --cwd /path/to/project

@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { parse as parseToml } from "smol-toml";
 import { BUILTIN_SERVERS } from "../registry/builtins.js";
 import type { LanguageServerConfig } from "../registry/registry.js";
 import { LanguageServerRegistry } from "../registry/registry.js";
@@ -30,7 +29,7 @@ export interface LspJsonManifest {
   }>;
 }
 
-const CONFIG_FILES = ["locus.toml", "locus.json", ".lsp.json"];
+const CONFIG_FILES = ["locus.json", ".lsp.json"];
 
 export function findConfigFile(startDir: string): string | undefined {
   let dir = resolve(startDir);
@@ -57,11 +56,7 @@ export function loadConfig(cwd: string = process.cwd()): { config: LocusConfig; 
 
   if (configPath) {
     const raw = readFileSync(configPath, "utf8");
-    if (configPath.endsWith(".toml")) {
-      config = parseToml(raw) as LocusConfig;
-    } else {
-      config = JSON.parse(raw) as LocusConfig;
-    }
+    config = JSON.parse(raw) as LocusConfig;
 
     if (configPath.endsWith(".lsp.json")) {
       config = convertLspJson(JSON.parse(raw) as LspJsonManifest, config);
@@ -145,23 +140,6 @@ export function generateDefaultConfig(rootPath: string): LocusConfig {
     servers,
     warm: languages.length ? languages : ["typescript"],
   };
-}
-
-export function configToToml(config: LocusConfig): string {
-  const lines = [
-    `# Locus configuration`,
-    `root = ${JSON.stringify(config.root ?? ".")}`,
-    "",
-  ];
-
-  if (config.warm?.length) {
-    lines.push(`warm = ${JSON.stringify(config.warm)}`);
-    lines.push("");
-  }
-
-  lines.push("# Language servers are configured in locus.json for now.");
-  lines.push("# See README for server override examples.");
-  return lines.join("\n");
 }
 
 export function configToJson(config: LocusConfig): string {

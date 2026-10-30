@@ -28,7 +28,7 @@ export class LspConnection {
   private process: ChildProcessWithoutNullStreams | null = null;
   private nextId = 1;
   private pending = new Map<number | string, PendingRequest>();
-  private buffer = "";
+  private buffer = Buffer.alloc(0);
   private contentLength = -1;
   private readonly requestTimeoutMs: number;
   private readonly onNotification?: (method: string, params: unknown) => void;
@@ -55,6 +55,8 @@ export class LspConnection {
     if (this.process) return;
 
     this.exited = false;
+    this.buffer = Buffer.alloc(0);
+    this.contentLength = -1;
     this.process = spawn(this.options.command, this.options.args ?? [], {
       cwd: this.options.cwd,
       env: { ...process.env, ...this.options.env },
@@ -63,7 +65,7 @@ export class LspConnection {
     });
 
     this.process.stdout.on("data", (chunk: Buffer) => {
-      this.handleData(chunk.toString("utf8"));
+      this.handleData(chunk);
     });
 
     this.process.stderr.on("data", (chunk: Buffer) => {
@@ -140,15 +142,15 @@ export class LspConnection {
     this.process!.stdin.write(header + body, "utf8");
   }
 
-  private handleData(data: string): void {
-    this.buffer += data;
+  private handleData(data: Buffer): void {
+    this.buffer = Buffer.concat([this.buffer, data]);
 
     while (true) {
       if (this.contentLength < 0) {
         const headerEnd = this.buffer.indexOf(`${CRLF}${CRLF}`);
         if (headerEnd === -1) return;
 
-        const header = this.buffer.slice(0, headerEnd);
+        const header = this.buffer.subarray(0, headerEnd).toString("utf8");
         const match = header.match(/Content-Length:\s*(\d+)/i);
         if (!match) {
           this.buffer = this.buffer.slice(headerEnd + 4);
@@ -161,7 +163,7 @@ export class LspConnection {
 
       if (this.buffer.length < this.contentLength) return;
 
-      const body = this.buffer.slice(0, this.contentLength);
+      const body = this.buffer.subarray(0, this.contentLength).toString("utf8");
       this.buffer = this.buffer.slice(this.contentLength);
       this.contentLength = -1;
 
@@ -177,8 +179,20 @@ export class LspConnection {
   }
 
   private handleMessage(message: JsonRpcMessage): void {
-    if ("method" in message && message.method && !("id" in message && message.id !== undefined)) {
-      this.onNotification?.(message.method, message.params);
+    if ("method" in message && message.method) {
+      if (!("id" in message) || message.id === undefined) {
+        this.onNotification?.(message.method, message.params);
+      } else if (message.method === "window/workDoneProgress/create") {
+        const params = message.params;
+        const token = params && typeof params === "object" && "token" in params ? params.token : undefined;
+        if (typeof token === "string" || typeof token === "number") {
+          this.writeMessage({ jsonrpc: "2.0", id: message.id, result: null });
+        } else {
+          this.writeMessage({ jsonrpc: "2.0", id: message.id, error: { code: -32602, message: "Invalid progress token" } });
+        }
+      } else {
+        this.writeMessage({ jsonrpc: "2.0", id: message.id, error: { code: -32601, message: `Method not found: ${message.method}` } });
+      }
       return;
     }
 

@@ -240,5 +240,5 @@ Tell it:
 - [Getting started](./getting-started.md) — first-time setup without LSP jargon
 - [FAQ](./faq.md) — common questions
 - [Who is Locus for?](./positioning.md) — fit and alternatives
-- [Configuration](./configuration.md) — `locus.toml`, language overrides
+- [Configuration](./configuration.md) — `locus.json`, language overrides
 - [Tools reference](./tools.md) — full MCP tool documentation

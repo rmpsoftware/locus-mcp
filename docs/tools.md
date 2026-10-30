@@ -53,6 +53,12 @@ Find a symbol by name (including qualified names like `MyClass.method`) or list 
 
 When both `name` and `file` are supplied, Locus opens the file before searching the selected servers' workspace symbols. If the workspace search finds nothing, it searches that file's document symbols instead. Workspace matches may still refer to other files.
 
+An empty result retains `no_results` and notes that indexing state is unknown.
+If a selected server reports LSP work-done progress, active background work is
+also shown. Progress may describe work other than indexing; its absence or
+completion does not guarantee a complete index. `status` also shows active work.
+Servers that fail are reported separately. Retry if results might be incomplete.
+
 **Examples**
 
 Find a class:

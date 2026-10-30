@@ -44,6 +44,8 @@ export class LspClient {
   private diagnosticTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private publishWaiters = new Map<string, Set<PublishWaiter>>();
   private diagnosticSequence = 0;
+  private activeWork = new Map<string | number, string>();
+  private progressObserved = false;
   private diagnosticProvider?: { identifier?: string };
   private restartAttempts = 0;
   private readonly maxRestarts = 3;
@@ -67,6 +69,10 @@ export class LspClient {
 
   get info(): { name: string; version?: string } | undefined {
     return this.serverInfo;
+  }
+
+  get progress(): { observed: boolean; active: string[] } {
+    return { observed: this.progressObserved, active: [...this.activeWork.values()] };
   }
 
   getDiagnostics(uri?: string): Diagnostic[] {
@@ -191,6 +197,7 @@ export class LspClient {
         processId: process.pid,
         rootUri,
         capabilities: {
+          window: { workDoneProgress: true },
           workspace: {
             workspaceFolders: true,
             symbol: { dynamicRegistration: false },
@@ -283,6 +290,8 @@ export class LspClient {
     }
     this.diagnosticTimers.clear();
     this.cancelPublishWaiters();
+    this.activeWork.clear();
+    this.progressObserved = false;
     await this.connection.stop();
     if (startPromise) {
       try {
@@ -468,9 +477,13 @@ export class LspClient {
         onNotification: (method, params) => {
           if (method === "textDocument/publishDiagnostics") {
             this.handleDiagnostics(params as PublishDiagnosticsParams);
+          } else if (method === "$/progress") {
+            this.handleProgress(params);
           }
         },
         onExit: () => {
+          this.activeWork.clear();
+          this.progressObserved = false;
           if (this.state === "ready" || this.state === "starting") {
             this.startAbort?.abort();
             this.stopWatcher();
@@ -480,6 +493,18 @@ export class LspClient {
         },
       },
     );
+  }
+
+  private handleProgress(params: unknown): void {
+    if (!params || typeof params !== "object" || !("token" in params) || !("value" in params)) return;
+    const { token, value } = params;
+    if ((typeof token !== "string" && typeof token !== "number") || !value || typeof value !== "object" || !("kind" in value)) return;
+    if (value.kind === "begin" && "title" in value && typeof value.title === "string") {
+      this.progressObserved = true;
+      this.activeWork.set(token, value.title.replace(/\s+/g, " ").trim().slice(0, 200) || "(untitled)");
+    } else if (value.kind === "end" && this.activeWork.has(token)) {
+      this.activeWork.delete(token);
+    }
   }
 
   private startWatcher(): void {

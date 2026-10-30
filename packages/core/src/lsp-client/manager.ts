@@ -17,6 +17,7 @@ export interface ServerStatus {
   serverInfo?: { name: string; version?: string };
   openDocuments: number;
   warmed: boolean;
+  progress?: { observed: boolean; active: string[] };
 }
 
 export interface ServerFilter {
@@ -87,9 +88,9 @@ export class LspManager {
     );
   }
 
-  async warm(languageIds?: string[]): Promise<void> {
-    const targets = languageIds?.length
-      ? this.configs.filter((c) => languageIds.includes(c.languageId))
+  async warm(ids?: string[]): Promise<void> {
+    const targets = ids?.length
+      ? this.configs.filter((c) => ids.includes(c.id))
       : this.configs;
 
     for (const config of targets) {
@@ -120,6 +121,7 @@ export class LspManager {
         serverInfo: client?.info,
         openDocuments: client?.getOpenDocuments().length ?? 0,
         warmed: this.warmedServers.has(key),
+        progress: client?.progress,
       });
     }
 

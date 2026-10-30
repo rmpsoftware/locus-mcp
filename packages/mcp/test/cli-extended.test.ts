@@ -1,6 +1,6 @@
 import { describe, it, mock } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { runCli } from "../src/cli.js";
@@ -50,16 +50,21 @@ describe("cli help", () => {
 });
 
 describe("cli init idempotent", () => {
-  it("does not overwrite existing config files", async () => {
-    const dir = join(tmpdir(), `locus-cli-idempotent-${Date.now()}`);
+  it("does not overwrite an existing JSON config or modify a legacy TOML config", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "locus-cli-idempotent-"));
+    const originalCwd = process.cwd();
     try {
+      const json = '{"root":".","warm":["custom"]}\n';
+      const toml = 'root = "legacy"\n';
+      writeFileSync(join(dir, "locus.json"), json);
+      writeFileSync(join(dir, "locus.toml"), toml);
       await runCli(["init", "--cwd", dir]);
       await runCli(["init", "--cwd", dir]);
 
-      const { readFileSync } = await import("node:fs");
-      const toml = readFileSync(join(dir, "locus.toml"), "utf8");
-      assert.match(toml, /root/);
+      assert.equal(readFileSync(join(dir, "locus.json"), "utf8"), json);
+      assert.equal(readFileSync(join(dir, "locus.toml"), "utf8"), toml);
     } finally {
+      process.chdir(originalCwd);
       rmSync(dir, { recursive: true, force: true });
     }
   });
@@ -68,6 +73,7 @@ describe("cli init idempotent", () => {
 describe("cli check", () => {
   it("exits with code 1 when binaries missing", async () => {
     const dir = mkdtempSync(join(tmpdir(), "locus-cli-check-"));
+    const originalCwd = process.cwd();
     const exit = mock.method(process, "exit", () => {});
 
     try {
@@ -77,6 +83,7 @@ describe("cli check", () => {
       assert.equal(code, 1);
     } finally {
       exit.mock.restore();
+      process.chdir(originalCwd);
       rmSync(dir, { recursive: true, force: true });
     }
   });
@@ -85,11 +92,13 @@ describe("cli check", () => {
 describe("cli warm", () => {
   it("runs warm without throwing", async () => {
     const dir = mkdtempSync(join(tmpdir(), "locus-cli-warm-"));
+    const originalCwd = process.cwd();
     try {
       await runCli(["init", "--cwd", dir]);
       await runCli(["warm", "--cwd", dir]);
     } finally {
       await new Promise((r) => setTimeout(r, 100));
+      process.chdir(originalCwd);
       rmSync(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   });

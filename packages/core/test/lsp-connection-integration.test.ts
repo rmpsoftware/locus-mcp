@@ -113,6 +113,32 @@ describe("LspConnection with fake-lsp", () => {
     }
   });
 
+  it("tracks server-created progress without confusing overlapping request IDs", async () => {
+    const client = new LspClient({
+      rootPath: process.cwd(),
+      serverConfig: {
+        id: "progress", languageId: "typescript", extensions: [".ts"],
+        command: process.execPath, args: [FAKE_LSP, "progress"],
+      },
+      requestTimeoutMs: 2000,
+    });
+    try {
+      await client.start();
+      assert.deepEqual(await client.workspaceSymbol("missing"), []);
+      assert.deepEqual(client.progress, { observed: true, active: ["Indexing \u2026", "Loading projects"] });
+      await client.workspaceSymbol("end");
+      assert.deepEqual(client.progress, { observed: true, active: ["Loading projects"] });
+      await client.workspaceSymbol("end-all");
+      assert.deepEqual(client.progress, { observed: true, active: [] });
+      await client.restart();
+      assert.deepEqual(await client.workspaceSymbol("missing"), []);
+      assert.equal(client.progress.active.length, 2);
+    } finally {
+      await client.stop();
+    }
+    assert.deepEqual(client.progress, { observed: false, active: [] });
+  });
+
   it("reports a server exit during the initialization delay", async () => {
     const client = new LspClient({
       rootPath: process.cwd(),

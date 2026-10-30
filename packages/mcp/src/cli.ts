@@ -4,7 +4,6 @@ import { join, resolve } from "node:path";
 import {
   loadConfig,
   generateDefaultConfig,
-  configToToml,
   configToJson,
   detectProjectLanguages,
 } from "@rmpsoftware/locus-core";
@@ -16,12 +15,12 @@ Locus — agent-first LSP code intelligence
 
 Usage:
   locus serve [--cwd <path>]     Start MCP server (stdio)
-  locus init [--cwd <path>]      Generate locus.toml + locus.json
+  locus init [--cwd <path>]      Generate locus.json
   locus check [--cwd <path>]     Check LSP binary availability
   locus warm [--cwd <path>]      Pre-warm language servers
 
 Options:
-  --cwd <path>   Project root (default: current directory)
+  --cwd <path>   Working directory and project root (default: current directory)
   --help, -h     Show this help
 `.trim();
 
@@ -31,6 +30,11 @@ export async function runCli(argv: string[] = process.argv.slice(2)): Promise<vo
   if (!command || command === "help" || command === "--help" || command === "-h") {
     console.log(HELP);
     return;
+  }
+
+  if (command === "serve" || command === "init" || command === "check" || command === "warm") {
+    if (command === "init") mkdirSync(cwd, { recursive: true });
+    process.chdir(cwd);
   }
 
   switch (command) {
@@ -59,8 +63,10 @@ function parseArgs(argv: string[]): { command?: string; cwd: string } {
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
-    if (arg === "--cwd" && argv[i + 1]) {
-      cwd = resolve(argv[++i]!);
+    if (arg === "--cwd") {
+      const path = argv[++i];
+      if (!path || path.startsWith("--")) throw new Error("--cwd requires a path");
+      cwd = resolve(path);
     } else if (!arg.startsWith("-") && !command) {
       command = arg;
     }
@@ -71,19 +77,8 @@ function parseArgs(argv: string[]): { command?: string; cwd: string } {
 
 async function runInit(cwd: string): Promise<void> {
   const rootPath = resolve(cwd);
-  if (!existsSync(rootPath)) {
-    mkdirSync(rootPath, { recursive: true });
-  }
   const config = generateDefaultConfig(rootPath);
-  const tomlPath = join(rootPath, "locus.toml");
   const jsonPath = join(rootPath, "locus.json");
-
-  if (!existsSync(tomlPath)) {
-    writeFileSync(tomlPath, configToToml(config), "utf8");
-    console.log(`Created ${tomlPath}`);
-  } else {
-    console.log(`Already exists: ${tomlPath}`);
-  }
 
   if (!existsSync(jsonPath)) {
     writeFileSync(jsonPath, configToJson(config), "utf8");

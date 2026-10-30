@@ -8,6 +8,9 @@ const label = process.argv[2];
 let openedUri;
 let buffer = Buffer.alloc(0);
 let contentLength = -1;
+let progressSupported = false;
+let progressCreated = false;
+let pendingSymbol;
 
 process.stdin.on("data", (chunk) => {
   buffer = Buffer.concat([buffer, chunk]);
@@ -50,6 +53,9 @@ function parseMessages() {
 function handleMessage(message) {
   if (message.method && message.id === undefined) {
     if (label === "exit-on-initialized" && message.method === "initialized") process.exit(1);
+    if (label === "progress" && message.method === "initialized" && progressSupported) {
+      send({ jsonrpc: "2.0", id: 2, method: "window/workDoneProgress/create", params: { token: "index" } });
+    }
     if (label && label !== "pull" && (message.method === "textDocument/didOpen" || message.method === "textDocument/didChange")) {
       const { uri, version } = message.params.textDocument;
       openedUri = uri;
@@ -59,12 +65,25 @@ function handleMessage(message) {
   }
 
   if (message.id === undefined) return;
+  if (!message.method) {
+    if (label === "progress" && message.id === 2 && message.result === null) {
+      progressCreated = true;
+      send({ jsonrpc: "2.0", method: "$/progress", params: { token: "index", value: { kind: "begin", title: "Indexing \u2026" } } });
+      send({ jsonrpc: "2.0", method: "$/progress", params: { token: 7, value: { kind: "begin", title: "Loading projects" } } });
+      if (pendingSymbol) {
+        send({ jsonrpc: "2.0", id: pendingSymbol, result: [] });
+        pendingSymbol = undefined;
+      }
+    }
+    return;
+  }
 
   const { id, method, params } = message;
   let result = null;
 
   switch (method) {
     case "initialize":
+      progressSupported = params?.capabilities?.window?.workDoneProgress === true;
       result = {
         capabilities: label === "pull" ? { diagnosticProvider: { identifier: "fake" } } : {},
         serverInfo: { name: "fake-lsp", version: "1.0.0" },
@@ -80,6 +99,20 @@ function handleMessage(message) {
       };
       break;
     case "workspace/symbol":
+      if (label === "progress") {
+        if (!progressCreated) {
+          pendingSymbol = id;
+          return;
+        }
+        if (params?.query === "end" || params?.query === "end-all") {
+          send({ jsonrpc: "2.0", method: "$/progress", params: { token: "index", value: { kind: "end" } } });
+        }
+        if (params?.query === "end-all") {
+          send({ jsonrpc: "2.0", method: "$/progress", params: { token: 7, value: { kind: "end" } } });
+        }
+        result = [];
+        break;
+      }
       result = [
         {
           name: params?.query ?? "Symbol",

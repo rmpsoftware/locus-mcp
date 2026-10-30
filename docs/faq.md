@@ -63,9 +63,8 @@ Yes. Add Locus to your MCP config with `npx @rmpsoftware/locus-mcp serve` and se
 
 In order of discovery (walks up from cwd):
 
-1. `locus.toml` — project root and warm languages
-2. `locus.json` — full server definitions
-3. `.lsp.json` — Claude/Open Plugins compatibility
+1. `locus.json` — project settings and server definitions
+2. `.lsp.json` — Claude/Open Plugins compatibility
 
 ## Is Locus published on npm?
 
