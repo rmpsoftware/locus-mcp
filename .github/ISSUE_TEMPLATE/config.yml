@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Discussions
-    url: https://github.com/paladini/locus-mcp/discussions
+    url: https://github.com/rmpsoftware/locus-mcp/discussions
     about: Ask questions and share ideas
   - name: Documentation
-    url: https://github.com/paladini/locus-mcp/tree/main/docs
+    url: https://github.com/rmpsoftware/locus-mcp/tree/main/docs
     about: Read the Locus docs

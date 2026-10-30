@@ -15,6 +15,8 @@ export interface LspJsonManifest {
   languageServer?: {
     command?: string;
     args?: string[];
+    autoOpenFiles?: string[];
+    initSleep?: number;
     extensionToLanguage?: Record<string, string>;
   };
   servers?: Array<{
@@ -23,6 +25,8 @@ export interface LspJsonManifest {
     extensions?: string[];
     command?: string;
     args?: string[];
+    autoOpenFiles?: string[];
+    initSleep?: number;
   }>;
 }
 
@@ -64,7 +68,7 @@ export function loadConfig(cwd: string = process.cwd()): { config: LocusConfig; 
     }
   }
 
-  const rootPath = resolve(config.root ?? (configPath ? resolve(configPath, "..") : cwd));
+  const rootPath = resolve(configPath ? resolve(configPath, "..") : cwd, config.root ?? ".");
   return { config, configPath, rootPath };
 }
 
@@ -85,6 +89,8 @@ function convertLspJson(manifest: LspJsonManifest, existing: LocusConfig): Locus
         extensions: entry.extensions ?? [],
         command: entry.command,
         args: entry.args,
+        autoOpenFiles: entry.autoOpenFiles,
+        initSleep: entry.initSleep,
       });
     }
   }
@@ -100,6 +106,8 @@ function convertLspJson(manifest: LspJsonManifest, existing: LocusConfig): Locus
       extensions,
       command: manifest.languageServer.command,
       args: manifest.languageServer.args,
+      autoOpenFiles: manifest.languageServer.autoOpenFiles,
+      initSleep: manifest.languageServer.initSleep,
     });
   }
 

@@ -2,6 +2,8 @@ export * from "./lsp-client/types.js";
 export * from "./lsp-client/connection.js";
 export * from "./lsp-client/client.js";
 export * from "./lsp-client/manager.js";
+export * from "./lsp-client/fan-out.js";
+export * from "./lsp-client/file-resolver.js";
 export * from "./registry/registry.js";
 export * from "./registry/builtins.js";
 export * from "./symbol-layer/resolver.js";

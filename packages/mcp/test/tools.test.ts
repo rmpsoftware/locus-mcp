@@ -8,27 +8,29 @@ const ALL_TOOLS = [
   { importPath: "../src/tools/diagnostics.js", name: "diagnostics", requiredProps: [] },
   { importPath: "../src/tools/status.js", name: "status", requiredProps: [] },
   { importPath: "../src/tools/rename.js", name: "rename", requiredProps: ["new_name"] },
+  { importPath: "../src/tools/list-projects.js", name: "list_projects", requiredProps: [] },
 ] as const;
 
 describe("mcp tools", () => {
-  it("exports exactly 6 tools", async () => {
+  const exportName = (name: string) => name === "list_projects" ? "listProjectsTool" : `${name}Tool`;
+
+  it("exports exactly 7 tools", async () => {
     const modules = await Promise.all(
       ALL_TOOLS.map(async (t) => {
         const mod = await import(t.importPath);
-        const exportName = `${t.name}Tool`;
-        return mod[exportName as keyof typeof mod];
+        return mod[exportName(t.name) as keyof typeof mod];
       }),
     );
 
-    assert.equal(modules.length, 6);
+    assert.equal(modules.length, 7);
     const names = new Set(modules.map((t: { name: string }) => t.name));
-    assert.equal(names.size, 6);
+    assert.equal(names.size, 7);
   });
 
   for (const spec of ALL_TOOLS) {
     it(`${spec.name} tool has valid MCP schema`, async () => {
       const mod = await import(spec.importPath);
-      const tool = mod[`${spec.name}Tool` as keyof typeof mod] as {
+      const tool = mod[exportName(spec.name) as keyof typeof mod] as {
         name: string;
         description: string;
         inputSchema: {
@@ -56,6 +58,17 @@ describe("mcp tools", () => {
       }
     });
   }
+
+  it("exposes project and language filters on all language-server query tools", async () => {
+    for (const spec of ALL_TOOLS.filter((t) => !["status", "list_projects"].includes(t.name))) {
+      const mod = await import(spec.importPath);
+      const tool = mod[exportName(spec.name) as keyof typeof mod] as {
+        inputSchema: { properties: Record<string, unknown> };
+      };
+      assert.ok(tool.inputSchema.properties.project, spec.name);
+      assert.ok(tool.inputSchema.properties.lang, spec.name);
+    }
+  });
 
   it("locate schema accepts name and file", async () => {
     const { locateTool } = await import("../src/tools/locate.js");

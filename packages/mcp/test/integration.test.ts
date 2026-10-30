@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { join, resolve } from "node:path";
-import { LspClient } from "@paladini/locus-core";
+import { LspClient } from "@rmpsoftware/locus-core";
 
 const FIXTURE_TS = resolve(import.meta.dirname, "../../../evals/fixtures/typescript");
 const FIXTURE_PY = resolve(import.meta.dirname, "../../../evals/fixtures/python");

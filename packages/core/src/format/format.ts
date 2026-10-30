@@ -10,6 +10,8 @@ export type LocusStatus =
   | "server_starting"
   | "server_unavailable"
   | "ambiguous_symbol"
+  | "file_not_found"
+  | "ambiguous_file"
   | "error";
 
 export interface LocusResult<T = string> {
@@ -54,6 +56,20 @@ export function formatHover(hover: Hover | null): string {
   }
 
   return contents.value;
+}
+
+export function formatHovers(hovers: Array<{ server: string; hover: Hover | null }>): string {
+  const answers = new Map<string, string>();
+
+  for (const { server, hover } of hovers) {
+    const text = hover ? formatHover(hover).trim() : "";
+    if (text && !answers.has(text)) answers.set(text, server);
+  }
+
+  if (answers.size === 0) return formatHover(null);
+  if (answers.size === 1) return [...answers.keys()][0]!;
+
+  return [...answers].map(([text, server]) => `## ${server}\n\n${text}`).join("\n\n");
 }
 
 export function formatDiagnostics(diagnostics: Diagnostic[], filePath: string, rootPath: string): string {
@@ -103,7 +119,7 @@ export function formatWorkspaceDiagnostics(
 
 export function formatStatus(
   statuses: Array<{
-    languageId: string;
+    id: string;
     command: string;
     state: string;
     binaryAvailable: boolean;
@@ -116,7 +132,7 @@ export function formatStatus(
   for (const s of statuses) {
     const binary = s.binaryAvailable ? "installed" : "MISSING";
     lines.push(
-      `- **${s.languageId}** (${s.command}): ${s.state}, binary ${binary}, warmed=${s.warmed}, docs=${s.openDocuments}`,
+      `- **${s.id}** (${s.command}): ${s.state}, binary ${binary}, warmed=${s.warmed}, docs=${s.openDocuments}`,
     );
   }
 

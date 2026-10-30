@@ -1,15 +1,16 @@
-import { resolve } from "node:path";
 import { z } from "zod";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import {
+  fanOut,
   formatDiagnostics,
   formatWorkspaceDiagnostics,
+  mergeDiagnostics,
   okResult,
   errorResult,
-} from "@paladini/locus-core";
-import { filePathToUri } from "@paladini/locus-core";
+  Diagnostic,
+} from "@rmpsoftware/locus-core";
 import type { LocusServerContext } from "../context.js";
-import { getClientForSymbol, handleLspError } from "./helpers.js";
+import { allFailedResult, FILE_PATH_HINT, SERVER_FILTER_PROPERTIES, serverFilterError, serverFilterSchema, withFailures } from "./helpers.js";
 
 export const diagnosticsTool = {
   name: "diagnostics",
@@ -17,51 +18,54 @@ export const diagnosticsTool = {
   inputSchema: {
     type: "object" as const,
     properties: {
-      file: { type: "string", description: "File path (omit for workspace-wide)" },
+      ...SERVER_FILTER_PROPERTIES,
+      file: { type: "string", description: `${FILE_PATH_HINT}. Omit for workspace-wide` },
       workspace: { type: "boolean", description: "Collect from all open documents" },
     },
   },
 };
 
 const diagnosticsSchema = z.object({
+  ...serverFilterSchema,
   file: z.string().optional(),
   workspace: z.boolean().optional(),
 });
 
 export async function handleDiagnostics(ctx: LocusServerContext, args: unknown): Promise<CallToolResult> {
   const input = diagnosticsSchema.parse(args ?? {});
+  const filterError = serverFilterError(ctx, input);
+  if (filterError) return textResult(filterError);
 
   if (input.file) {
-    const filePath = resolve(ctx.rootPath, input.file);
-    const client = await getClientForSymbol(ctx, filePath);
-    if (!client) {
+    const resolved = await ctx.manager.resolveFile(input.file, input);
+    if (resolved.status !== "ok") {
+      return textResult(resolved);
+    }
+
+    const filePath = resolved.file;
+    const clients = await ctx.manager.getClientsForFile(filePath, input);
+    if (clients.length === 0) {
       return textResult(errorResult("server_unavailable", `No LSP for ${input.file}`));
     }
 
-    try {
-      await client.didOpen(filePath);
-      await waitForDiagnostics(200);
-      const uri = filePathToUri(filePath);
-      const diags = client.getDiagnostics(uri);
-      const text = formatDiagnostics(diags, filePath, ctx.rootPath);
-      return textResult(okResult(text, `${diags.length} diagnostic(s)`));
-    } catch (err) {
-      return textResult(handleLspError(err));
+    const { results, failures } = await fanOut(clients, (client) => client.collectDiagnostics(filePath));
+    if (results.length === 0) {
+      return textResult(allFailedResult(failures));
     }
+
+    const diags = mergeDiagnostics(results.map((r) => r.value));
+    const text = formatDiagnostics(diags, filePath, ctx.rootPath);
+    return textResult(withFailures(okResult(text, `${diags.length} diagnostic(s)`), failures));
   }
 
   // Workspace diagnostics from all active clients
-  const byFile = new Map<string, import("@paladini/locus-core").Diagnostic[]>();
+  const byFile = new Map<string, Diagnostic[]>();
 
-  for (const config of ctx.configs) {
-    const dummy = resolve(ctx.rootPath, `dummy${config.extensions[0]}`);
-    const client = await ctx.manager.getClientForFile(dummy);
-    if (!client || client.serverState !== "ready") continue;
-
+  for (const client of ctx.manager.getRunningClients(input)) {
     for (const doc of client.getOpenDocuments()) {
       const diags = client.getDiagnostics(doc.uri);
       if (diags.length) {
-        byFile.set(doc.uri, diags);
+        byFile.set(doc.uri, mergeDiagnostics([byFile.get(doc.uri) ?? [], diags]));
       }
     }
   }
@@ -72,10 +76,6 @@ export async function handleDiagnostics(ctx: LocusServerContext, args: unknown):
 
   const text = formatWorkspaceDiagnostics(byFile, ctx.rootPath);
   return textResult(okResult(text));
-}
-
-function waitForDiagnostics(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 function textResult(result: { status: string; data?: string; message?: string }): CallToolResult {

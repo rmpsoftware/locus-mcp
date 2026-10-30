@@ -1,8 +1,8 @@
 import { z } from "zod";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { formatLocations, okResult, errorResult } from "@paladini/locus-core";
+import { fanOut, formatLocations, mergeLocations, okResult, errorResult } from "@rmpsoftware/locus-core";
 import type { LocusServerContext } from "../context.js";
-import { getClientForSymbol, handleLspError, parsePosition } from "./helpers.js";
+import { allFailedResult, FILE_PATH_HINT, parsePosition, SERVER_FILTER_PROPERTIES, serverFilterError, serverFilterSchema, withFailures } from "./helpers.js";
 
 export const refsTool = {
   name: "refs",
@@ -10,7 +10,8 @@ export const refsTool = {
   inputSchema: {
     type: "object" as const,
     properties: {
-      file: { type: "string", description: "File path containing the symbol" },
+      ...SERVER_FILTER_PROPERTIES,
+      file: { type: "string", description: `File containing the symbol. ${FILE_PATH_HINT}` },
       line: { type: "number", description: "0-based line number" },
       character: { type: "number", description: "0-based character offset" },
       position: { type: "string", description: "Alternative: path:line:col (1-based line/col)" },
@@ -23,6 +24,7 @@ export const refsTool = {
 };
 
 const refsSchema = z.object({
+  ...serverFilterSchema,
   file: z.string(),
   line: z.number().optional(),
   character: z.number().optional(),
@@ -34,42 +36,51 @@ const refsSchema = z.object({
 
 export async function handleRefs(ctx: LocusServerContext, args: unknown): Promise<CallToolResult> {
   const input = refsSchema.parse(args ?? {});
+  const filterError = serverFilterError(ctx, input);
+  if (filterError) return textResult(filterError);
   const pos = parsePosition(input.position);
   const line = pos?.line ?? input.line;
   const character = pos?.character ?? input.character;
-  const file = pos?.file ?? input.file;
 
   if (line === undefined || character === undefined) {
     return textResult(errorResult("error", "Provide line/character or position (path:line:col)"));
   }
 
-  const client = await getClientForSymbol(ctx, file);
-  if (!client) {
+  const resolved = await ctx.manager.resolveFile(pos?.file ?? input.file, input);
+  if (resolved.status !== "ok") {
+    return textResult(resolved);
+  }
+
+  const { file } = resolved;
+  const clients = await ctx.manager.getClientsForFile(file, input);
+  if (clients.length === 0) {
     return textResult(errorResult("server_unavailable", `No LSP for ${file}`));
   }
 
-  try {
-    const locations = input.implementations
-      ? await client.implementation(file, line, character)
-      : await client.references(file, line, character, input.include_declaration ?? true);
-
-    if (locations.length === 0) {
-      return textResult(errorResult("no_results", "No references found"));
-    }
-
-    const limit = input.limit ?? 50;
-    const limited = locations.slice(0, limit);
-    const formatted = formatLocations(limited, ctx.rootPath);
-
-    let text = formatted.join("\n");
-    if (locations.length > limit) {
-      text += `\n\n... ${locations.length - limit} more (use limit param)`;
-    }
-
-    return textResult(okResult(text, `${locations.length} result(s)`));
-  } catch (err) {
-    return textResult(handleLspError(err));
+  const { results, failures } = await fanOut(clients, (client) =>
+    input.implementations
+      ? client.implementation(file, line, character)
+      : client.references(file, line, character, input.include_declaration ?? true),
+  );
+  if (results.length === 0) {
+    return textResult(allFailedResult(failures));
   }
+
+  const locations = mergeLocations(results.map((r) => r.value));
+  if (locations.length === 0) {
+    return textResult(withFailures(errorResult("no_results", "No references found"), failures));
+  }
+
+  const limit = input.limit ?? 50;
+  const limited = locations.slice(0, limit);
+  const formatted = formatLocations(limited, ctx.rootPath);
+
+  let text = formatted.join("\n");
+  if (locations.length > limit) {
+    text += `\n\n... ${locations.length - limit} more (use limit param)`;
+  }
+
+  return textResult(withFailures(okResult(text, `${locations.length} result(s)`), failures));
 }
 
 function textResult(result: { status: string; data?: string; message?: string }): CallToolResult {

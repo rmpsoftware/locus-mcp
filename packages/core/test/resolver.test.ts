@@ -65,20 +65,20 @@ describe("SymbolResolver.findByName", () => {
   const resolver = new SymbolResolver({ rootPath: ROOT });
 
   it("returns no_results for empty query", async () => {
-    const result = await resolver.findByName(mockClient([]), "   ");
+    const result = await resolver.findByName([mockClient([])], "   ");
     assert.equal(result.status, "no_results");
     assert.match(result.message ?? "", /Empty query/);
   });
 
   it("returns no_results when nothing matches", async () => {
-    const result = await resolver.findByName(mockClient([]), "NonExistent");
+    const result = await resolver.findByName([mockClient([])], "NonExistent");
     assert.equal(result.status, "no_results");
     assert.match(result.message ?? "", /No symbols matching/);
   });
 
   it("returns ok for exact single match", async () => {
     const symbols = [makeSymbol("Greeter")];
-    const result = await resolver.findByName(mockClient(symbols), "Greeter");
+    const result = await resolver.findByName([mockClient(symbols)], "Greeter");
     assert.equal(result.status, "ok");
     assert.equal(result.symbols.length, 1);
     assert.equal(result.symbols[0]!.name, "Greeter");
@@ -86,7 +86,7 @@ describe("SymbolResolver.findByName", () => {
 
   it("returns ok for qualified name match", async () => {
     const symbols = [makeSymbol("greet", "Greeter")];
-    const result = await resolver.findByName(mockClient(symbols), "Greeter.greet");
+    const result = await resolver.findByName([mockClient(symbols)], "Greeter.greet");
     assert.equal(result.status, "ok");
     assert.equal(result.symbols[0]!.qualifiedName, "Greeter.greet");
   });
@@ -96,14 +96,14 @@ describe("SymbolResolver.findByName", () => {
       makeSymbol("process", "ModuleA", "src/a.ts"),
       makeSymbol("process", "ModuleB", "src/b.ts"),
     ];
-    const result = await resolver.findByName(mockClient(symbols), "process");
+    const result = await resolver.findByName([mockClient(symbols)], "process");
     assert.equal(result.status, "ambiguous_symbol");
     assert.ok(result.symbols.length >= 2);
   });
 
   it("returns ok for single partial match when no exact match", async () => {
     const symbols = [makeSymbol("fetchUserData")];
-    const result = await resolver.findByName(mockClient(symbols), "fetchUser");
+    const result = await resolver.findByName([mockClient(symbols)], "fetchUser");
     assert.equal(result.status, "ok");
     assert.equal(result.symbols[0]!.name, "fetchUserData");
   });
@@ -112,9 +112,130 @@ describe("SymbolResolver.findByName", () => {
     const symbols = Array.from({ length: 15 }, (_, i) =>
       makeSymbol("handler", `Module${i}`, `src/m${i}.ts`),
     );
-    const result = await resolver.findByName(mockClient(symbols), "handler");
+    const result = await resolver.findByName([mockClient(symbols)], "handler");
     assert.equal(result.status, "ambiguous_symbol");
     assert.equal(result.symbols.length, 10);
+  });
+
+  it("does not report a symbol found by two servers as ambiguous", async () => {
+    const symbols = [makeSymbol("Greeter")];
+    const result = await resolver.findByName([mockClient(symbols), mockClient(symbols)], "Greeter");
+    assert.equal(result.status, "ok");
+    assert.equal(result.symbols.length, 1);
+  });
+
+  it("ranks symbols from all servers together", async () => {
+    const result = await resolver.findByName(
+      [mockClient([makeSymbol("process", "A", "src/a.ts")]), mockClient([makeSymbol("process", "B", "src/b.py")])],
+      "process",
+    );
+    assert.equal(result.status, "ambiguous_symbol");
+    assert.deepEqual(result.symbols.map((s) => s.qualifiedName).sort(), ["A.process", "B.process"]);
+  });
+
+  it("keeps symbols from other servers and reports the failure", async () => {
+    const broken = {
+      ...mockClient([]),
+      workspaceSymbol: async () => {
+        throw new Error("server_unavailable");
+      },
+    } as unknown as LspClient;
+
+    const result = await resolver.findByName([broken, mockClient([makeSymbol("Greeter")])], "Greeter");
+    assert.equal(result.status, "ok");
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.failures[0]!.client, broken);
+  });
+
+  it("reports every server once when all fail", async () => {
+    let calls = 0;
+    const broken = {
+      workspaceSymbol: async () => {
+        calls++;
+        throw new Error("server_unavailable");
+      },
+    } as unknown as LspClient;
+
+    const result = await resolver.findByName([broken, broken], "Greeter");
+    assert.equal(result.status, "no_results");
+    assert.equal(result.failures.length, 2);
+    assert.equal(calls, 2);
+  });
+
+  it("falls back to the member name on servers that answered", async () => {
+    const queries: string[] = [];
+    const client = {
+      workspaceSymbol: async (query: string) => {
+        queries.push(query);
+        return query === "greet" ? [makeSymbol("greet", "Other")] : [];
+      },
+    } as unknown as LspClient;
+
+    const result = await resolver.findByName([client], "Greeter.greet");
+    assert.deepEqual(queries, ["Greeter.greet", "greet"]);
+    assert.equal(result.symbols[0]!.name, "greet");
+  });
+
+  it("opens a supplied file before searching workspace symbols", async () => {
+    const calls: string[] = [];
+    const client = {
+      didOpen: async (file: string) => { calls.push(`open:${file}`); },
+      workspaceSymbol: async (query: string) => {
+        calls.push(`workspace:${query}`);
+        return [makeSymbol("Greeter")];
+      },
+    } as unknown as LspClient;
+    const result = await resolver.findByName([client], "Greeter", resolve(ROOT, "src/index.ts"));
+    assert.deepEqual(calls, [`open:${resolve(ROOT, "src/index.ts")}`, "workspace:Greeter"]);
+    assert.equal(result.status, "ok");
+  });
+
+  it("falls back to matching document symbols when workspace search is empty", async () => {
+    const client = {
+      didOpen: async () => {},
+      workspaceSymbol: async () => [],
+      documentSymbol: async () => [makeSymbol("other"), makeSymbol("greet", "Greeter")],
+    } as unknown as LspClient;
+    const result = await resolver.findByName([client], "Greeter.greet", resolve(ROOT, "src/index.ts"));
+    assert.equal(result.status, "ok");
+    assert.equal(result.symbols[0]?.qualifiedName, "Greeter.greet");
+  });
+
+  it("does not return unrelated document symbols on fallback", async () => {
+    const client = {
+      didOpen: async () => {},
+      workspaceSymbol: async () => [],
+      documentSymbol: async () => [makeSymbol("other")],
+    } as unknown as LspClient;
+    const result = await resolver.findByName([client], "Missing", resolve(ROOT, "src/index.ts"));
+    assert.equal(result.status, "no_results");
+  });
+
+  it("retains failures opening a file and returns other servers' document matches", async () => {
+    const broken = {
+      didOpen: async () => { throw new Error("failed to open"); },
+    } as unknown as LspClient;
+    const working = {
+      didOpen: async () => {},
+      workspaceSymbol: async () => [],
+      documentSymbol: async () => [makeSymbol("Greeter")],
+    } as unknown as LspClient;
+    const result = await resolver.findByName([broken, working], "Greeter", resolve(ROOT, "src/index.ts"));
+    assert.equal(result.status, "ok");
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.failures[0]?.client, broken);
+  });
+
+  it("reports document fallback failures rather than returning success", async () => {
+    const client = {
+      didOpen: async () => {},
+      workspaceSymbol: async () => [],
+      documentSymbol: async () => { throw new Error("document request failed"); },
+    } as unknown as LspClient;
+    const result = await resolver.findByName([client], "Greeter", resolve(ROOT, "src/index.ts"));
+    assert.equal(result.status, "no_results");
+    assert.equal(result.failures.length, 1);
+    assert.match(String(result.failures[0]?.error), /document request failed/);
   });
 });
 

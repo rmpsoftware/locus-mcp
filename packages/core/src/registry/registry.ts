@@ -1,5 +1,9 @@
 export interface LanguageServerConfig {
   id: string;
+  root?: string;
+  ignoreDirectories?: string[];
+  autoOpenFiles?: string[];
+  initSleep?: number;
   languageId: string;
   extensions: string[];
   command: string;

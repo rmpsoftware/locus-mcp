@@ -1,12 +1,12 @@
 {
-  "name": "@paladini/locus-mcp",
+  "name": "@rmpsoftware/locus-mcp",
   "version": "0.1.5",
-  "mcpName": "io.github.paladini/locus-mcp",
+  "mcpName": "io.github.rmpsoftware/locus-mcp",
   "description": "Locus MCP server — agent-first LSP code intelligence for Cursor, Claude Code, and AI agents",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "locus": "./dist/bin.js"
+    "locus": "dist/locus.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,19 +16,22 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "engines": {
     "node": ">=22"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/paladini/locus-mcp.git",
+    "url": "git+https://github.com/rmpsoftware/locus-mcp.git",
     "directory": "packages/mcp"
   },
   "bugs": {
-    "url": "https://github.com/paladini/locus-mcp/issues"
+    "url": "https://github.com/rmpsoftware/locus-mcp/issues"
   },
-  "homepage": "https://github.com/paladini/locus-mcp/tree/main/packages/mcp#readme",
+  "homepage": "https://github.com/rmpsoftware/locus-mcp/tree/main/packages/mcp#readme",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -46,17 +49,21 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "prepack": "npm run build --workspace @rmpsoftware/locus-core && npm run build",
+    "build": "tsc -p tsconfig.json && npm run bundle",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
-    "lint": "tsc -p tsconfig.json --noEmit"
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "bundle": "rolldown --config rolldown.config.mjs"
   },
   "dependencies": {
-    "@paladini/locus-core": "*",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.24.1"
+    "@rmpsoftware/locus-core": "0.1.5",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/node": "latest",
+    "rolldown": "^1.2.16",
     "tsx": "^4.19.2"
   }
 }

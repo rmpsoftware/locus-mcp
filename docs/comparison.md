@@ -7,7 +7,7 @@ A factual comparison to help you pick the right MCP + code-intelligence setup fo
 | | **Locus** | **Serena** | **mcp-language-server** | **cclsp** |
 |---|-----------|------------|-------------------------|-----------|
 | Primary goal | Semantic navigation for agents | Full agent IDE (edit + refactor + memory) | Generic LSP-over-MCP | Host-native LSP for Claude Code |
-| Install | `npx @paladini/locus-mcp` (Node.js 22+) | `uv tool install serena-agent` (Python) | Community packages | Host plugin |
+| Install | `npx @rmpsoftware/locus-mcp` (Node.js 22+) | `uv tool install serena-agent` (Python) | Community packages | Host plugin |
 | MCP tools | 6 fixed tools | Many | Variable / generic | Host-specific |
 | Edits code | No — your agent edits | Yes — symbolic editing tools | Depends | Limited |
 | Agent memory | No | Yes | No | No |
@@ -23,7 +23,7 @@ A factual comparison to help you pick the right MCP + code-intelligence setup fo
 
 **You get:**
 
-- Six documented tools: `locate`, `refs`, `hover`, `diagnostics`, `status`, `rename`
+- Seven documented tools: `locate`, `refs`, `hover`, `diagnostics`, `status`, `rename`, `list_projects`
 - Symbol resolution with qualified names and clear status codes
 - Compact output agents can scan quickly (`src/foo.ts:12:4: symbol | snippet`)
 - `.lsp.json` compatibility for portable config
@@ -59,7 +59,7 @@ A factual comparison to help you pick the right MCP + code-intelligence setup fo
 
 **Choose when** you need generic LSP-over-MCP access or uncommon LSP methods.
 
-**Compared to Locus:** Generic bridges often expose raw LSP methods or large JSON payloads. Locus adds a symbol layer, formatted output, status codes, and a fixed six-tool contract tuned for agents.
+**Compared to Locus:** Generic bridges often expose raw LSP methods or large JSON payloads. Locus adds a symbol layer, formatted output, status codes, and a fixed seven-tool contract tuned for agents.
 
 ## cclsp
 

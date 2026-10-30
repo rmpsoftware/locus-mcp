@@ -37,57 +37,44 @@ jobs:
       - name: Pack MCPB bundle
         run: npm run pack:mcpb
 
+      - name: Publish @rmpsoftware/locus-core to npm
+        id: npm-core
+        run: |
+          if [ -n "${NPM_TOKEN:-}" ]; then
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "$NPM_CONFIG_USERCONFIG"
+          fi
+          npm publish -w @rmpsoftware/locus-core --provenance --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @rmpsoftware/locus-mcp to npm
+        id: npm-mcp
+        run: |
+          if [ -n "${NPM_TOKEN:-}" ]; then
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "$NPM_CONFIG_USERCONFIG"
+          fi
+          npm publish -w @rmpsoftware/locus-mcp --provenance --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Configure GitHub Packages auth
         run: |
           cat >> "$NPM_CONFIG_USERCONFIG" <<EOF
-          @paladini:registry=https://npm.pkg.github.com
+          @rmpsoftware:registry=https://npm.pkg.github.com
           //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
-          always-auth=true
           EOF
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish @paladini/locus-core to GitHub Packages
-        run: npm publish -w @paladini/locus-core --registry https://npm.pkg.github.com
+      - name: Publish @rmpsoftware/locus-core to GitHub Packages
+        run: npm publish -w @rmpsoftware/locus-core --registry https://npm.pkg.github.com
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish @paladini/locus-mcp to GitHub Packages
-        run: npm publish -w @paladini/locus-mcp --registry https://npm.pkg.github.com
+      - name: Publish @rmpsoftware/locus-mcp to GitHub Packages
+        run: npm publish -w @rmpsoftware/locus-mcp --registry https://npm.pkg.github.com
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish @paladini/locus-core to npm
-        id: npm-core
-        continue-on-error: true
-        run: |
-          if [ -n "${NPM_TOKEN:-}" ]; then
-            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "$NPM_CONFIG_USERCONFIG"
-          fi
-          VERSION=$(node -p "require('./packages/core/package.json').version")
-          if npm view "@paladini/locus-core@${VERSION}" version 2>/dev/null; then
-            echo "Skipping npm publish: @paladini/locus-core@${VERSION} already exists"
-          else
-            npm publish -w @paladini/locus-core --provenance --access public
-          fi
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @paladini/locus-mcp to npm
-        id: npm-mcp
-        continue-on-error: true
-        run: |
-          if [ -n "${NPM_TOKEN:-}" ]; then
-            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "$NPM_CONFIG_USERCONFIG"
-          fi
-          VERSION=$(node -p "require('./packages/mcp/package.json').version")
-          if npm view "@paladini/locus-mcp@${VERSION}" version 2>/dev/null; then
-            echo "Skipping npm publish: @paladini/locus-mcp@${VERSION} already exists"
-          else
-            npm publish -w @paladini/locus-mcp --provenance --access public
-          fi
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Install mcp-publisher
         if: steps.npm-mcp.outcome == 'success'
@@ -111,13 +98,7 @@ jobs:
       - name: Verify GitHub Packages publish
         run: |
           VERSION=$(node -p "require('./packages/mcp/package.json').version")
-          npm view "@paladini/locus-mcp@${VERSION}" version --registry https://npm.pkg.github.com
-          npm view "@paladini/locus-core@${VERSION}" version --registry https://npm.pkg.github.com
+          npm view "@rmpsoftware/locus-mcp@${VERSION}" version --registry https://npm.pkg.github.com
+          npm view "@rmpsoftware/locus-core@${VERSION}" version --registry https://npm.pkg.github.com
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Report npm publish status
-        if: steps.npm-mcp.outcome != 'success'
-        run: |
-          echo "::warning::npm publish did not complete. Add NPM_TOKEN secret or publish manually once, then configure Trusted Publisher on npmjs.com."
-          exit 0

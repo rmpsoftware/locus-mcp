@@ -25,7 +25,7 @@ You should receive a response within **72 hours**. We will coordinate disclosure
 
 In scope:
 
-- `@paladini/locus-core` and `@paladini/locus-mcp` packages
+- `@rmpsoftware/locus-core` and `@rmpsoftware/locus-mcp` packages
 - MCP tool handlers and CLI commands
 - LSP process spawning and configuration loading
 

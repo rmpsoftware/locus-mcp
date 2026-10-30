@@ -1,14 +1,16 @@
 /**
  * Minimal fake language server for unit tests.
  * Speaks JSON-RPC over stdin/stdout with Content-Length framing.
+ * An optional first argument labels this server's hover and diagnostics.
  */
 const CRLF = "\r\n";
-let buffer = "";
+const label = process.argv[2];
+let openedUri;
+let buffer = Buffer.alloc(0);
 let contentLength = -1;
 
-process.stdin.setEncoding("utf8");
 process.stdin.on("data", (chunk) => {
-  buffer += chunk;
+  buffer = Buffer.concat([buffer, chunk]);
   while (parseMessages()) {
     /* drain */
   }
@@ -19,21 +21,21 @@ function parseMessages() {
     const headerEnd = buffer.indexOf(`${CRLF}${CRLF}`);
     if (headerEnd === -1) return false;
 
-    const header = buffer.slice(0, headerEnd);
+    const header = buffer.subarray(0, headerEnd).toString("utf8");
     const match = header.match(/Content-Length:\s*(\d+)/i);
     if (!match) {
-      buffer = buffer.slice(headerEnd + 4);
+      buffer = buffer.subarray(headerEnd + 4);
       return true;
     }
 
     contentLength = Number.parseInt(match[1], 10);
-    buffer = buffer.slice(headerEnd + 4);
+    buffer = buffer.subarray(headerEnd + 4);
   }
 
   if (buffer.length < contentLength) return false;
 
-  const body = buffer.slice(0, contentLength);
-  buffer = buffer.slice(contentLength);
+  const body = buffer.subarray(0, contentLength).toString("utf8");
+  buffer = buffer.subarray(contentLength);
   contentLength = -1;
 
   try {
@@ -47,6 +49,12 @@ function parseMessages() {
 
 function handleMessage(message) {
   if (message.method && message.id === undefined) {
+    if (label === "exit-on-initialized" && message.method === "initialized") process.exit(1);
+    if (label && label !== "pull" && (message.method === "textDocument/didOpen" || message.method === "textDocument/didChange")) {
+      const { uri, version } = message.params.textDocument;
+      openedUri = uri;
+      setTimeout(() => publishDiagnostics(uri, version), label === "beta" ? 350 : 0);
+    }
     return;
   }
 
@@ -58,8 +66,17 @@ function handleMessage(message) {
   switch (method) {
     case "initialize":
       result = {
-        capabilities: {},
+        capabilities: label === "pull" ? { diagnosticProvider: { identifier: "fake" } } : {},
         serverInfo: { name: "fake-lsp", version: "1.0.0" },
+      };
+      break;
+    case "textDocument/diagnostic":
+      result = {
+        kind: "full",
+        items: [{
+          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } },
+          message: "pull problem",
+        }],
       };
       break;
     case "workspace/symbol":
@@ -68,7 +85,7 @@ function handleMessage(message) {
           name: params?.query ?? "Symbol",
           kind: 12,
           location: {
-            uri: "file:///proj/src/index.ts",
+            uri: process.argv[3] === "workspace-open-file" && openedUri ? openedUri : "file:///proj/src/index.ts",
             range: {
               start: { line: 4, character: 2 },
               end: { line: 4, character: 10 },
@@ -116,7 +133,7 @@ function handleMessage(message) {
       ];
       break;
     case "textDocument/hover":
-      result = { contents: { kind: "markdown", value: "**string**" } };
+      result = { contents: { kind: "markdown", value: label ? `**${label}**` : "**string**" } };
       break;
     case "textDocument/prepareRename":
       result = {
@@ -158,6 +175,22 @@ function handleMessage(message) {
   }
 
   send({ jsonrpc: "2.0", id, result });
+}
+
+function publishDiagnostics(uri, version) {
+  const range = { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } };
+  send({
+    jsonrpc: "2.0",
+    method: "textDocument/publishDiagnostics",
+    params: {
+      uri,
+      version,
+      diagnostics: [
+        { range, severity: 1, message: "shared problem" },
+        { range, severity: 2, message: `${label} problem` },
+      ],
+    },
+  });
 }
 
 function send(message) {

@@ -7,7 +7,7 @@ import {
   configToToml,
   configToJson,
   detectProjectLanguages,
-} from "@paladini/locus-core";
+} from "@rmpsoftware/locus-core";
 import { createLocusContext, shutdownContext } from "./context.js";
 import { runMcpServer } from "./server.js";
 
@@ -103,7 +103,7 @@ async function runCheck(cwd: string): Promise<void> {
   let hasMissing = false;
   for (const s of statuses) {
     const icon = s.binaryAvailable ? "✓" : "✗";
-    console.log(`${icon} ${s.languageId}: ${s.command} (${s.binaryAvailable ? "found" : "MISSING"})`);
+    console.log(`${icon} ${s.id}: ${s.command} (${s.binaryAvailable ? "found" : "MISSING"})`);
     if (!s.binaryAvailable) hasMissing = true;
   }
 
@@ -122,7 +122,7 @@ async function runWarm(cwd: string): Promise<void> {
   const statuses = await ctx.manager.status();
 
   for (const s of statuses) {
-    console.log(`- ${s.languageId}: ${s.state}${s.warmed ? " (warmed)" : ""}`);
+    console.log(`- ${s.id}: ${s.state}${s.warmed ? " (warmed)" : ""}`);
   }
 
   await shutdownContext(ctx);

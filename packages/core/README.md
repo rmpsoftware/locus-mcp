@@ -1,16 +1,16 @@
-# @paladini/locus-core
+# @rmpsoftware/locus-core
 
-Core library for [Locus](https://github.com/paladini/locus-mcp) — LSP client, language-server registry, symbol resolution, and agent-friendly output formatting.
+Core library for [Locus](https://github.com/rmpsoftware/locus-mcp) — LSP client, language-server registry, symbol resolution, and agent-friendly output formatting.
 
-[![npm version](https://img.shields.io/npm/v/@paladini/locus-core)](https://www.npmjs.com/package/@paladini/locus-core)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/paladini/locus-mcp/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/@rmpsoftware/locus-core)](https://www.npmjs.com/package/@rmpsoftware/locus-core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/rmpsoftware/locus-mcp/blob/main/LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org/)
 
-> **Looking to use Locus with your AI agent?** Install [`@paladini/locus-mcp`](https://www.npmjs.com/package/@paladini/locus-mcp) instead — it includes the MCP server, CLI, and everything you need as an end user.
+> **Looking to use Locus with your AI agent?** Install [`@rmpsoftware/locus-mcp`](https://www.npmjs.com/package/@rmpsoftware/locus-mcp) instead — it includes the MCP server, CLI, and everything you need as an end user.
 
 ## What is this package?
 
-`@paladini/locus-core` is the **engine** behind Locus. It provides reusable building blocks for connecting to language servers and turning LSP responses into compact, agent-readable text.
+`@rmpsoftware/locus-core` is the **engine** behind Locus. It provides reusable building blocks for connecting to language servers and turning LSP responses into compact, agent-readable text.
 
 Use this package when you are:
 
@@ -18,7 +18,7 @@ Use this package when you are:
 - Contributing to the Locus monorepo
 - Integrating language-server intelligence into Node.js tooling
 
-End users who want MCP tools in Cursor or Claude Code should use **`@paladini/locus-mcp`**, not this package directly.
+End users who want MCP tools in Cursor or Claude Code should use **`@rmpsoftware/locus-mcp`**, not this package directly.
 
 ## What problems does it solve?
 
@@ -63,13 +63,13 @@ Building LSP integrations from scratch means handling process spawning, JSON-RPC
 ## Installation
 
 ```bash
-npm install @paladini/locus-core
+npm install @rmpsoftware/locus-core
 ```
 
 From GitHub Packages:
 
 ```bash
-npm install @paladini/locus-core --registry https://npm.pkg.github.com
+npm install @rmpsoftware/locus-core --registry https://npm.pkg.github.com
 ```
 
 Requires Node.js **22+**.
@@ -79,7 +79,7 @@ Requires Node.js **22+**.
 ### Load project config
 
 ```typescript
-import { findConfigFile, loadConfig, createRegistry } from "@paladini/locus-core";
+import { findConfigFile, loadConfig, createRegistry } from "@rmpsoftware/locus-core";
 
 const configPath = findConfigFile(process.cwd());
 const { config, rootPath } = loadConfig(process.cwd());
@@ -97,7 +97,7 @@ console.log(tsServer?.command); // e.g. "typescript-language-server"
 ### Connect to a language server
 
 ```typescript
-import { LspClient, formatLocations } from "@paladini/locus-core";
+import { LspClient, formatLocations } from "@rmpsoftware/locus-core";
 
 const client = new LspClient({
   rootPath: "/path/to/project",
@@ -153,25 +153,25 @@ export * from "./config/config.js";
 
 TypeScript definitions are included in the published package (`dist/*.d.ts`).
 
-## Relationship to @paladini/locus-mcp
+## Relationship to @rmpsoftware/locus-mcp
 
 ```
-@paladini/locus-core   ←  LSP client, registry, symbols, format, config
+@rmpsoftware/locus-core   ←  LSP client, registry, symbols, format, config
         ↑
-@paladini/locus-mcp    ←  MCP server, CLI, six agent tools
+@rmpsoftware/locus-mcp    ←  MCP server, CLI, seven agent tools
 ```
 
-`@paladini/locus-mcp` depends on this package and adds the MCP protocol layer, tool handlers, and CLI commands (`serve`, `init`, `check`, `warm`).
+`@rmpsoftware/locus-mcp` depends on this package and adds the MCP protocol layer, tool handlers, and CLI commands (`serve`, `init`, `check`, `warm`).
 
 ## Documentation
 
 | Resource | Link |
 |----------|------|
-| End-user setup | [Getting started](https://github.com/paladini/locus-mcp/blob/main/docs/getting-started.md) |
-| Configuration | [Configuration guide](https://github.com/paladini/locus-mcp/blob/main/docs/configuration.md) |
-| Architecture | [Design doc](https://github.com/paladini/locus-mcp/blob/main/docs/design.md) |
-| Contributing | [Contributing guide](https://github.com/paladini/locus-mcp/blob/main/CONTRIBUTING.md) |
+| End-user setup | [Getting started](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/getting-started.md) |
+| Configuration | [Configuration guide](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/configuration.md) |
+| Architecture | [Design doc](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/design.md) |
+| Contributing | [Contributing guide](https://github.com/rmpsoftware/locus-mcp/blob/main/CONTRIBUTING.md) |
 
 ## License
 
-[MIT](https://github.com/paladini/locus-mcp/blob/main/LICENSE)
+[MIT](https://github.com/rmpsoftware/locus-mcp/blob/main/LICENSE)

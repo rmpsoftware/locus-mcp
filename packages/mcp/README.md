@@ -1,9 +1,9 @@
-# @paladini/locus-mcp
+# @rmpsoftware/locus-mcp
 
-**Locus** is an MCP server that gives AI coding agents semantic code intelligence — the same go-to-definition, find-references, type information, and diagnostics your IDE uses, through six focused tools.
+**Locus** is an MCP server that gives AI coding agents semantic code intelligence — the same go-to-definition, find-references, type information, and diagnostics your IDE uses, through seven focused tools.
 
-[![npm version](https://img.shields.io/npm/v/@paladini/locus-mcp)](https://www.npmjs.com/package/@paladini/locus-mcp)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/paladini/locus-mcp/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/@rmpsoftware/locus-mcp)](https://www.npmjs.com/package/@rmpsoftware/locus-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/rmpsoftware/locus-mcp/blob/main/LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org/)
 
 ## What problem does this solve?
@@ -23,7 +23,7 @@ Locus connects your agent to **language servers** (TypeScript, Python, Go, Rust,
 
 - Developers and builders who work **through an AI agent** and want semantic navigation, not just grep
 - Teams using **Cursor**, **Claude Code**, **Codex**, or any MCP-capable host
-- People who want a **small, predictable** setup (`npx`, six tools) instead of a full IDE-inside-MCP stack
+- People who want a **small, predictable** setup (`npx`, seven tools) instead of a full IDE-inside-MCP stack
 
 Locus does **not** replace your agent's edit tools, grep for plain text, or provide agent memory. It complements hosts that already edit well with a focused navigation layer.
 
@@ -53,8 +53,8 @@ rustup component add rust-analyzer
 Run in your **project root**:
 
 ```bash
-npx @paladini/locus-mcp init
-npx @paladini/locus-mcp check
+npx @rmpsoftware/locus-mcp init
+npx @rmpsoftware/locus-mcp check
 ```
 
 - `init` — creates `locus.toml` / `locus.json` config files
@@ -71,7 +71,7 @@ Replace `/absolute/path/to/your/project` with your real project path.
   "mcpServers": {
     "locus": {
       "command": "npx",
-      "args": ["-y", "@paladini/locus-mcp", "serve"],
+      "args": ["-y", "@rmpsoftware/locus-mcp", "serve"],
       "cwd": "/absolute/path/to/your/project"
     }
   }
@@ -100,12 +100,12 @@ Your agent should call the `locate` and `refs` MCP tools — not run grep in a t
 | `locus warm` | Pre-start language servers before a long session |
 
 ```bash
-npx @paladini/locus-mcp --help
+npx @rmpsoftware/locus-mcp --help
 ```
 
 ## MCP tools
 
-Locus exposes exactly **six tools**. All return compact text with a leading `status:` line.
+Locus exposes **seven tools**. Query tools return compact text with a leading `status:` line; `list_projects` returns a JSON array.
 
 | Tool | What it does |
 |------|----------------|
@@ -115,6 +115,9 @@ Locus exposes exactly **six tools**. All return compact text with a leading `sta
 | `diagnostics` | Get compiler/linter errors for a file or workspace |
 | `status` | Check language-server readiness and missing binaries |
 | `rename` | Preview a rename (dry-run by default; agent applies edits) |
+| `list_projects` | Discover configured project IDs, roots, and languages |
+
+Use the optional `project` and `lang` parameters on navigation and diagnostics tools to select server configurations by ID and language.
 
 ### Example prompts
 
@@ -129,7 +132,7 @@ Locus exposes exactly **six tools**. All return compact text with a leading `sta
 - **Replace grep** — grep is still best for logs, config keys, comments, and plain text
 - **Remember between sessions** — no agent memory store
 - **Run refactors automatically** — `rename` previews impact; your agent applies edits
-- **Expose every LSP feature** — six focused tools only
+- **Expose every LSP feature** — seven focused tools only
 
 ## Configuration
 
@@ -147,13 +150,13 @@ Run `locus init` to generate defaults. Built-in servers cover TypeScript/JavaScr
 
 ```bash
 # Recommended — no global install
-npx @paladini/locus-mcp init
+npx @rmpsoftware/locus-mcp init
 
 # Global install
-npm install -g @paladini/locus-mcp
+npm install -g @rmpsoftware/locus-mcp
 
 # From GitHub Packages
-npm install @paladini/locus-mcp --registry https://npm.pkg.github.com
+npm install @rmpsoftware/locus-mcp --registry https://npm.pkg.github.com
 ```
 
 Requires a GitHub PAT with `read:packages` for GitHub Packages installs.
@@ -169,21 +172,21 @@ Requires a GitHub PAT with `read:packages` for GitHub Packages installs.
 
 ## Documentation
 
-Full guides live in the [Locus repository](https://github.com/paladini/locus-mcp):
+Full guides live in the [Locus repository](https://github.com/rmpsoftware/locus-mcp):
 
 | Guide | Description |
 |-------|-------------|
-| [Getting started](https://github.com/paladini/locus-mcp/blob/main/docs/getting-started.md) | First-time setup |
-| [Usage guide](https://github.com/paladini/locus-mcp/blob/main/docs/usage.md) | Host setup and workflows |
-| [Tools reference](https://github.com/paladini/locus-mcp/blob/main/docs/tools.md) | All six tools with examples |
-| [Configuration](https://github.com/paladini/locus-mcp/blob/main/docs/configuration.md) | `locus.toml`, language servers |
-| [FAQ](https://github.com/paladini/locus-mcp/blob/main/docs/faq.md) | Common questions |
-| [Comparison](https://github.com/paladini/locus-mcp/blob/main/docs/comparison.md) | Locus vs Serena, grep, LSP bridges |
+| [Getting started](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/getting-started.md) | First-time setup |
+| [Usage guide](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/usage.md) | Host setup and workflows |
+| [Tools reference](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/tools.md) | All seven tools with examples |
+| [Configuration](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/configuration.md) | `locus.toml`, language servers |
+| [FAQ](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/faq.md) | Common questions |
+| [Comparison](https://github.com/rmpsoftware/locus-mcp/blob/main/docs/comparison.md) | Locus vs Serena, grep, LSP bridges |
 
 ## Related packages
 
-- [`@paladini/locus-core`](https://www.npmjs.com/package/@paladini/locus-core) — LSP client library used by this server (for library authors and contributors)
+- [`@rmpsoftware/locus-core`](https://www.npmjs.com/package/@rmpsoftware/locus-core) — LSP client library used by this server (for library authors and contributors)
 
 ## License
 
-[MIT](https://github.com/paladini/locus-mcp/blob/main/LICENSE)
+[MIT](https://github.com/rmpsoftware/locus-mcp/blob/main/LICENSE)

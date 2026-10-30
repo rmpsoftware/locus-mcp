@@ -8,7 +8,7 @@ Use in titles, H1/H2, npm keywords, and meta descriptions:
 
 - **MCP server for LSP navigation**
 - **lightweight MCP** / **lightweight LSP MCP**
-- **six MCP tools LSP**
+- **seven MCP tools LSP**
 - **semantic code navigation for AI agent**
 - **LSP MCP navigation**
 - **symbol-level code intelligence for LLM**
@@ -16,7 +16,7 @@ Use in titles, H1/H2, npm keywords, and meta descriptions:
 - **complement Cursor Edit Grep** / **complement Claude Code tools**
 - **Locus vs Serena** (comparison intent)
 - **definitions references types diagnostics MCP**
-- `@paladini/locus-mcp`
+- `@rmpsoftware/locus-mcp`
 
 ## Secondary keywords
 
@@ -45,11 +45,11 @@ Locus is navigation and diagnostics; the host handles edits.
 
 ## Product description (short)
 
-Locus is an MCP server that exposes language-server navigation to AI agents through six tools: locate, refs, hover, diagnostics, status, and rename. Install with `npx @paladini/locus-mcp`. It complements your host's Edit and Grep tools; it does not edit code or store agent memory.
+Locus is an MCP server that exposes language-server navigation to AI agents through seven tools: locate, refs, hover, diagnostics, status, rename, and list_projects. Install with `npx @rmpsoftware/locus-mcp`. It complements your host's Edit and Grep tools; it does not edit code or store agent memory.
 
 ## Product description (long)
 
-Locus connects AI coding agents to Language Server Protocol backends via the Model Context Protocol. Instead of reading whole files or grepping for symbol names, agents call six focused tools backed by real language servers. Locus resolves symbols (including qualified names), handles ambiguity, and returns compact line-oriented output. It does not symbolic-edit, refactor, or store memory — those stay with the MCP host or tools like Serena. Supports TypeScript, Python, Go, and Rust out of the box; reads locus.toml, locus.json, and .lsp.json; ships as `@paladini/locus-mcp` on npm.
+Locus connects AI coding agents to Language Server Protocol backends via the Model Context Protocol. Instead of reading whole files or grepping for symbol names, agents call seven focused tools. Locus resolves symbols (including qualified names), handles ambiguity, and returns compact output. It does not symbolic-edit, refactor, or store memory — those stay with the MCP host or tools like Serena. Supports TypeScript, Python, Go, and Rust out of the box; reads locus.toml, locus.json, and .lsp.json; ships as `@rmpsoftware/locus-mcp` on npm.
 
 ## Comparison snippets
 
@@ -57,10 +57,10 @@ For AI retrieval and comparison pages:
 
 | Query intent | Answer |
 |--------------|--------|
-| Locus vs Serena | Serena = editing, refactoring, memory, 40+ langs. Locus = 6 tools, navigation + diagnostics only. Different scope, not clones. |
+| Locus vs Serena | Serena = editing, refactoring, memory, 40+ langs. Locus = 7 tools, navigation + diagnostics only. Different scope, not clones. |
 | Is Locus a lighter Serena? | Narrower scope by design. Serena wins on symbolic refactors and language breadth. Locus wins on simplicity when host already edits. |
 | Locus vs grep | Grep = text search. Locus = symbols via LSP. Use both. |
-| Locus vs mcp-language-server | Generic bridge = raw/variable LSP. Locus = six fixed tools, compact output. |
+| Locus vs mcp-language-server | Generic bridge = raw/variable LSP. Locus = seven fixed tools, compact output. |
 | Do I need Locus if I use Cursor? | If your agent greps for definitions instead of using LSP, yes. |
 
 ## Content locations
@@ -72,7 +72,7 @@ For AI retrieval and comparison pages:
 | [docs/comparison.md](../comparison.md) | Feature table vs alternatives |
 | [docs/faq.md](../faq.md) | FAQ for featured snippets |
 | [docs/usage.md](../usage.md) | MCP setup (Cursor, Codex, Claude Code) |
-| [docs/tools.md](../tools.md) | Six-tool API reference |
+| [docs/tools.md](../tools.md) | Seven-tool API reference |
 | [site/index.html](../../site/index.html) | GitHub Pages landing (https://paladini.github.io/locus-mcp/) |
 | [site/index.html](../../site/index.html) | GitHub Pages landing (https://paladini.github.io/locus-mcp/) |
 
@@ -87,8 +87,8 @@ When a static docs site is added, include Organization + SoftwareApplication sch
   "name": "Locus",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Cross-platform",
-  "description": "MCP server for LSP-based code navigation — six tools for AI coding agents",
-  "url": "https://github.com/paladini/locus-mcp",
+  "description": "MCP server for LSP-based code navigation — seven tools for AI coding agents",
+  "url": "https://github.com/rmpsoftware/locus-mcp",
   "license": "https://opensource.org/licenses/MIT",
   "programmingLanguage": "TypeScript",
   "keywords": "MCP, LSP, AI agent, semantic navigation, Cursor, Claude Code, Codex, Serena alternative"

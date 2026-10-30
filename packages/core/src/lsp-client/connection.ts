@@ -103,7 +103,7 @@ export class LspConnection {
     });
   }
 
-  async request<T = unknown>(method: string, params?: unknown): Promise<T> {
+  async request<T = unknown>(method: string, params?: unknown, timeoutMs = this.requestTimeoutMs): Promise<T> {
     if (!this.process?.stdin.writable) {
       throw new Error("LSP process is not running");
     }
@@ -115,7 +115,7 @@ export class LspConnection {
       const timer = setTimeout(() => {
         this.pending.delete(id);
         reject(new Error(`LSP request timed out: ${method}`));
-      }, this.requestTimeoutMs);
+      }, timeoutMs);
 
       this.pending.set(id, {
         resolve: (value) => resolve(value as T),

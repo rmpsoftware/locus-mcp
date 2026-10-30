@@ -1,11 +1,11 @@
 # Publishing Guide
 
-This document describes how maintainers release `@paladini/locus-core` and `@paladini/locus-mcp` to npm, the official MCP Registry, GitHub Packages, and distribution channels.
+This document describes how maintainers release `@rmpsoftware/locus-core` and `@rmpsoftware/locus-mcp` to npm, the official MCP Registry, GitHub Packages, and distribution channels.
 
 ## Prerequisites
 
-- npm account with publish access to the `@paladini` scope on npmjs.org
-- GitHub repository `paladini/locus-mcp` owned by `paladini` (for `io.github.paladini/locus-mcp` namespace)
+- npm account with publish access to the `@rmpsoftware` scope on npmjs.org
+- GitHub repository `rmpsoftware/locus-mcp` (for the `io.github.rmpsoftware/locus-mcp` namespace)
 - **npm Trusted Publishing** configured for this GitHub repo (recommended — no `NPM_TOKEN` needed)
 
 ## npm Trusted Publishing (recommended)
@@ -14,7 +14,7 @@ npm recommends **Trusted Publishing** over long-lived access tokens for CI/CD. T
 
 ### One-time setup on npmjs.com
 
-Configure Trusted Publisher for **each** package (`@paladini/locus-core` and `@paladini/locus-mcp`):
+Configure Trusted Publisher for **each** package (`@rmpsoftware/locus-core` and `@rmpsoftware/locus-mcp`):
 
 1. Log in at [npmjs.com](https://www.npmjs.com/) and open the package page.
 2. Go to **Settings** → **Publishing access** → **Trusted Publisher**.
@@ -22,7 +22,7 @@ Configure Trusted Publisher for **each** package (`@paladini/locus-core` and `@p
 
    | Field | Value |
    |-------|-------|
-   | **Organization or user** | `paladini` |
+   | **Organization or user** | `rmpsoftware` |
    | **Repository** | `locus-mcp` |
    | **Workflow filename** | `publish.yml` |
    | **Environment** | *(leave empty)* |
@@ -35,14 +35,14 @@ When you push a `v*` tag, GitHub Actions issues a short-lived OIDC token. npm ve
 
 ### First publish (if packages do not exist yet)
 
-Trusted Publishing works for **updates** to an existing package. If `@paladini/locus-core` or `@paladini/locus-mcp` are not on npm yet, publish once manually from your machine:
+Trusted Publishing works for **updates** to an existing package. If `@rmpsoftware/locus-core` or `@rmpsoftware/locus-mcp` are not on npm yet, publish once manually from your machine:
 
 ```bash
 npm login
 npm run build
 npm test
-npm publish -w @paladini/locus-core --access public
-npm publish -w @paladini/locus-mcp --access public
+npm publish -w @rmpsoftware/locus-core --access public
+npm publish -w @rmpsoftware/locus-mcp --access public
 ```
 
 Then configure Trusted Publisher as above for all future releases via CI.
@@ -59,14 +59,15 @@ Then configure Trusted Publisher as above for all future releases via CI.
 Update version in **all** of these locations:
 
 1. `packages/core/package.json` → `"version"`
-2. `packages/mcp/package.json` → `"version"`
+2. `packages/mcp/package.json` → `"version"` and the exact `@rmpsoftware/locus-core` dependency version
 3. Root `package.json` → `"version"` (informational; root is private)
 4. [`server.json`](../server.json) → `"version"` and `packages[0].version`
 5. [`mcpb/manifest.json`](../mcpb/manifest.json) → `"version"`
 6. `packages/mcp/src/server.ts` → server version string in `createLocusServer`
-7. [`CHANGELOG.md`](../CHANGELOG.md) → new dated section
+7. `package-lock.json` → run `npm install --ignore-scripts` after updating versions
+8. [`CHANGELOG.md`](../CHANGELOG.md) → new dated section
 
-Keep `@paladini/locus-core` and `@paladini/locus-mcp` versions in sync for each release.
+Keep `@rmpsoftware/locus-core` and `@rmpsoftware/locus-mcp` versions in sync for each release.
 
 ## Release process (automated)
 
@@ -84,20 +85,20 @@ Publishing is automated via [`.github/workflows/publish.yml`](../.github/workflo
 3. Create and push a version tag:
 
    ```bash
-   git tag v0.1.2
+   git tag v0.1.5
    git push origin main
-   git push origin v0.1.2
+   git push origin v0.1.5
    ```
 
 4. GitHub Actions will:
    - Build and test the monorepo
    - Pack the Claude Desktop `.mcpb` bundle
-   - Publish `@paladini/locus-core` then `@paladini/locus-mcp` to **npmjs.org** (`--access public --provenance`)
+   - Publish `@rmpsoftware/locus-core` then `@rmpsoftware/locus-mcp` to **npmjs.org** (`--access public --provenance`)
    - Publish both packages to **GitHub Packages**
    - Publish to the [official MCP Registry](https://registry.modelcontextprotocol.io) via `mcp-publisher`
    - Create a GitHub Release with `locus-mcp.mcpb` attached
 
-**Publish order:** `@paladini/locus-core` must publish before `@paladini/locus-mcp` (workspace dependency).
+**Publish order:** `@rmpsoftware/locus-core` must publish before `@rmpsoftware/locus-mcp` (workspace dependency).
 
 ## Manual publishing (fallback)
 
@@ -111,8 +112,8 @@ npm test
 ### npmjs.org
 
 ```bash
-npm publish -w @paladini/locus-core --provenance --access public
-npm publish -w @paladini/locus-mcp --provenance --access public
+npm publish -w @rmpsoftware/locus-core --access public
+npm publish -w @rmpsoftware/locus-mcp --access public
 ```
 
 ### Official MCP Registry
@@ -132,7 +133,7 @@ mcp-publisher publish --dry-run
 mcp-publisher publish
 ```
 
-The `server.json` `name` field (`io.github.paladini/locus-mcp`) must match `mcpName` in `packages/mcp/package.json`.
+The `server.json` `name` field (`io.github.rmpsoftware/locus-mcp`) must match `mcpName` in `packages/mcp/package.json`.
 
 ### Claude Desktop Extension (.mcpb)
 
@@ -148,15 +149,15 @@ This creates `locus-mcp.mcpb` in the project root. Attach it to a GitHub Release
 Create or update `~/.npmrc`:
 
 ```ini
-@paladini:registry=https://npm.pkg.github.com
+@rmpsoftware:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=YOUR_GITHUB_PAT
 ```
 
 Then:
 
 ```bash
-npm publish -w @paladini/locus-core --registry https://npm.pkg.github.com
-npm publish -w @paladini/locus-mcp --registry https://npm.pkg.github.com
+npm publish -w @rmpsoftware/locus-core --registry https://npm.pkg.github.com
+npm publish -w @rmpsoftware/locus-mcp --registry https://npm.pkg.github.com
 ```
 
 See [`.npmrc.example`](../.npmrc.example) for consumer configuration.
@@ -166,7 +167,7 @@ See [`.npmrc.example`](../.npmrc.example) for consumer configuration.
 Consumers need a GitHub PAT with `read:packages` scope:
 
 ```bash
-npm install @paladini/locus-mcp --registry https://npm.pkg.github.com
+npm install @rmpsoftware/locus-mcp --registry https://npm.pkg.github.com
 ```
 
 Or configure `.npmrc` in the project (see `.npmrc.example`).
@@ -175,18 +176,18 @@ Or configure `.npmrc` in the project (see `.npmrc.example`).
 
 | Channel | Status | Notes |
 |---------|--------|-------|
-| [npm](https://www.npmjs.com/package/@paladini/locus-mcp) | Active | Primary distribution |
+| [npm](https://www.npmjs.com/package/@rmpsoftware/locus-mcp) | Pending first publish | Primary distribution |
 | [MCP Registry](https://registry.modelcontextprotocol.io) | Automated on tag push | `server.json` + `mcp-publisher` |
-| [GitHub Packages](https://github.com/paladini/locus-mcp/pkgs/npm/locus-mcp) | Automated on tag push | `@paladini` scope |
-| [Claude Desktop .mcpb](https://github.com/paladini/locus-mcp/releases) | GitHub Releases | Bundled extension |
+| [GitHub Packages](https://github.com/rmpsoftware/locus-mcp/pkgs/npm/locus-mcp) | Automated on tag push | `@rmpsoftware` scope |
+| [Claude Desktop .mcpb](https://github.com/rmpsoftware/locus-mcp/releases) | GitHub Releases | Bundled extension |
 | Third-party directories | See [directory-submissions.md](./directory-submissions.md) | Glama, Smithery, mcp.so, PulseMCP |
 
 ## Dry-run (local)
 
 ```bash
 npm run build
-npm pack -w @paladini/locus-core
-npm pack -w @paladini/locus-mcp
+npm pack -w @rmpsoftware/locus-core
+npm pack -w @rmpsoftware/locus-mcp
 ```
 
 Inspect the generated `.tgz` files before publishing.
@@ -199,6 +200,6 @@ Inspect the generated `.tgz` files before publishing.
 | Registry auth fails in CI | Verify `id-token: write` permission and `github-oidc` login |
 | npm publish 403 | Configure Trusted Publisher on npmjs.com; or publish manually once, then enable Trusted Publisher |
 | GitHub Packages 409 | Version already published — bump version |
-| `@paladini/locus-mcp` fails install | Publish `@paladini/locus-core` first, or keep versions aligned |
+| `@rmpsoftware/locus-mcp` fails install | Publish `@rmpsoftware/locus-core` first, or keep versions aligned |
 | MCPB pack fails | Run `npm run build` first; ensure Node.js 22+ |
 | Workflow not triggered | Tag must match `v*` pattern; check Actions permissions |

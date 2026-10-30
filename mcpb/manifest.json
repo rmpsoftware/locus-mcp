@@ -9,10 +9,10 @@
     "name": "Fernando Paladini",
     "url": "https://github.com/paladini"
   },
-  "homepage": "https://github.com/paladini/locus-mcp",
+  "homepage": "https://github.com/rmpsoftware/locus-mcp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paladini/locus-mcp"
+    "url": "https://github.com/rmpsoftware/locus-mcp"
   },
   "license": "MIT",
   "keywords": ["mcp", "lsp", "code-intelligence", "symbols", "typescript", "cursor", "claude"],
@@ -21,7 +21,7 @@
     "entry_point": "dist/bin.js",
     "mcp_config": {
       "command": "npx",
-      "args": ["-y", "@paladini/locus-mcp", "serve"]
+      "args": ["-y", "@rmpsoftware/locus-mcp", "serve"]
     }
   },
   "tools_generated": true,

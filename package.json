@@ -6,12 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paladini/locus-mcp.git"
+    "url": "https://github.com/rmpsoftware/locus-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/paladini/locus-mcp/issues"
+    "url": "https://github.com/rmpsoftware/locus-mcp/issues"
   },
-  "homepage": "https://paladini.github.io/locus-mcp/",
+  "homepage": "https://github.com/rmpsoftware/locus-mcp#readme",
   "workspaces": [
     "packages/*"
   ],
@@ -23,7 +23,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "pack:mcpb": "node scripts/pack-mcpb.mjs"
+    "pack:mcpb": "node scripts/pack-mcpb.mjs",
+    "bundle": "npm run bundle --workspace @rmpsoftware/locus-mcp"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

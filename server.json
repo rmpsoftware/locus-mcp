@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.paladini/locus-mcp",
+  "name": "io.github.rmpsoftware/locus-mcp",
   "title": "Locus",
   "description": "Lightweight MCP server for LSP code intelligence — symbol lookup, refs, types, diagnostics.",
   "version": "0.1.5",
   "repository": {
-    "url": "https://github.com/paladini/locus-mcp",
+    "url": "https://github.com/rmpsoftware/locus-mcp",
     "source": "github"
   },
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "@paladini/locus-mcp",
+      "identifier": "@rmpsoftware/locus-mcp",
       "version": "0.1.5",
       "transport": {
         "type": "stdio"

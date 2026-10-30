@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Locus — lightweight MCP for LSP navigation</title>
-  <meta name="description" content="Six MCP tools for semantic code navigation. Compact output, npx install, complements your agent's Edit and Grep tools.">
+  <meta name="description" content="Seven MCP tools for semantic code navigation. Compact output, npx install, complements your agent's Edit and Grep tools.">
   <meta property="og:title" content="Locus — lightweight MCP for LSP navigation">
-  <meta property="og:description" content="Six MCP tools for semantic code navigation. Compact output, npx install.">
+  <meta property="og:description" content="Seven MCP tools for semantic code navigation. Compact output, npx install.">
   <meta property="og:url" content="https://paladini.github.io/locus-mcp/">
   <meta property="og:type" content="website">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -18,8 +18,8 @@
     "name": "Locus",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Cross-platform",
-    "description": "MCP server for LSP-based code navigation — six tools for AI coding agents",
-    "url": "https://github.com/paladini/locus-mcp",
+    "description": "MCP server for LSP-based code navigation — seven tools for AI coding agents",
+    "url": "https://github.com/rmpsoftware/locus-mcp",
     "license": "https://opensource.org/licenses/MIT",
     "programmingLanguage": "TypeScript",
     "keywords": "MCP, LSP, AI agent, semantic navigation, Cursor, Claude Code, Codex"
@@ -34,25 +34,25 @@
     </header>
 
     <p class="lede">
-      Locus gives your AI coding agent a map of your codebase — definitions, references, types, and diagnostics — through six focused MCP tools. Install with <code>npx</code>. Your host still edits files; Locus only reads structure.
+      Locus gives your AI coding agent a map of your codebase — definitions, references, types, and diagnostics — through seven focused MCP tools. Install with <code>npx</code>. Your host still edits files; Locus only reads structure.
     </p>
 
     <h2>Why lightweight</h2>
     <p>
-      Most agent IDE stacks expose dozens of MCP tools, symbolic editing, and session memory. Locus does one job: semantic navigation backed by language servers. Six tools, compact line-oriented output, no second IDE inside MCP.
+      Most agent IDE stacks expose dozens of MCP tools, symbolic editing, and session memory. Locus does one job: semantic navigation backed by language servers. Seven tools, compact output, no second IDE inside MCP.
     </p>
     <p>
       Smaller tool surface means less context for the agent to juggle and faster calls when you only need to find a definition or list callers. That is the performance story — fewer moving parts, not invented benchmarks.
     </p>
 
     <h2>Install</h2>
-    <pre>npx @paladini/locus-mcp init
-npx @paladini/locus-mcp check</pre>
+    <pre>npx @rmpsoftware/locus-mcp init
+npx @rmpsoftware/locus-mcp check</pre>
     <p>
       Add the MCP server to Cursor, Codex, or Claude Code. Node.js 22+ required. Language servers on your <code>PATH</code> for the languages you use.
     </p>
 
-    <h2>Six tools</h2>
+    <h2>Seven tools</h2>
     <dl class="tools">
       <dt>locate</dt>
       <dd>Find a symbol by name or list symbols in a file.</dd>
@@ -66,6 +66,8 @@ npx @paladini/locus-mcp check</pre>
       <dd>Language-server readiness and missing binaries.</dd>
       <dt>rename</dt>
       <dd>Preview a rename (dry-run; apply via your agent).</dd>
+      <dt>list_projects</dt>
+      <dd>Discover configured project IDs, roots, and languages.</dd>
     </dl>
 
     <h2>When to choose Locus</h2>
@@ -93,7 +95,7 @@ npx @paladini/locus-mcp check</pre>
         </tr>
         <tr>
           <td>Install</td>
-          <td><code>npx @paladini/locus-mcp</code></td>
+          <td><code>npx @rmpsoftware/locus-mcp</code></td>
           <td><code>uv tool install serena-agent</code></td>
           <td>Host built-in</td>
         </tr>
@@ -120,20 +122,20 @@ npx @paladini/locus-mcp check</pre>
       <li>Edit your code — your agent's Edit/Write tools apply changes.</li>
       <li>Replace grep — grep stays best for plain text search.</li>
       <li>Remember things between sessions — no agent memory store.</li>
-      <li>Expose every LSP method — six curated tools only.</li>
+      <li>Expose every LSP method — seven curated tools only.</li>
     </ul>
 
     <h2>Links</h2>
     <ul class="links">
-      <li><a href="https://github.com/paladini/locus-mcp">GitHub repository</a></li>
-      <li><a href="https://www.npmjs.com/package/@paladini/locus-mcp">npm package</a></li>
-      <li><a href="https://github.com/paladini/locus-mcp/blob/main/docs/getting-started.md">Getting started</a></li>
-      <li><a href="https://github.com/paladini/locus-mcp/blob/main/docs/comparison.md">Comparison</a></li>
-      <li><a href="https://github.com/paladini/locus-mcp/blob/main/docs/tools.md">Tools reference</a></li>
+      <li><a href="https://github.com/rmpsoftware/locus-mcp">GitHub repository</a></li>
+      <li><a href="https://www.npmjs.com/package/@rmpsoftware/locus-mcp">npm package</a></li>
+      <li><a href="https://github.com/rmpsoftware/locus-mcp/blob/main/docs/getting-started.md">Getting started</a></li>
+      <li><a href="https://github.com/rmpsoftware/locus-mcp/blob/main/docs/comparison.md">Comparison</a></li>
+      <li><a href="https://github.com/rmpsoftware/locus-mcp/blob/main/docs/tools.md">Tools reference</a></li>
     </ul>
 
     <footer>
-      <p>MIT License · <a href="https://github.com/paladini/locus-mcp">paladini/locus-mcp</a></p>
+      <p>MIT License · <a href="https://github.com/rmpsoftware/locus-mcp">rmpsoftware/locus-mcp</a></p>
     </footer>
   </div>
 </body>

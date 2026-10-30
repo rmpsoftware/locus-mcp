@@ -7,6 +7,7 @@ export const BUILTIN_SERVERS: LanguageServerConfig[] = [
     extensions: [".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs"],
     command: "typescript-language-server",
     args: ["--stdio"],
+    ignoreDirectories: ["node_modules", "dist", "build"],
   },
   {
     id: "python",
@@ -14,6 +15,7 @@ export const BUILTIN_SERVERS: LanguageServerConfig[] = [
     extensions: [".py", ".pyi"],
     command: "pyright-langserver",
     args: ["--stdio"],
+    ignoreDirectories: ["__pycache__"],
   },
   {
     id: "go",
@@ -28,6 +30,7 @@ export const BUILTIN_SERVERS: LanguageServerConfig[] = [
     extensions: [".rs"],
     command: "rust-analyzer",
     args: [],
+    ignoreDirectories: ["target"],
   },
 ];
 

@@ -1,6 +1,11 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { handleLspError, parsePosition } from "../src/tools/helpers.js";
+import type { LspClient, ServerFailure } from "@rmpsoftware/locus-core";
+import { allFailedResult, handleLspError, parsePosition, withFailures } from "../src/tools/helpers.js";
+
+function failure(id: string, message: string): ServerFailure {
+  return { client: { id } as unknown as LspClient, error: new Error(message) };
+}
 
 describe("handleLspError", () => {
   it("maps server_starting message", () => {
@@ -30,6 +35,42 @@ describe("handleLspError", () => {
     const result = handleLspError("string error");
     assert.equal(result.status, "error");
     assert.equal(result.message, "string error");
+  });
+});
+
+describe("allFailedResult", () => {
+  it("passes a single failure through unchanged", () => {
+    assert.deepEqual(allFailedResult([failure("a", "server_unavailable")]), handleLspError(new Error("server_unavailable")));
+  });
+
+  it("names every server when several fail", () => {
+    const result = allFailedResult([failure("a", "server_unavailable"), failure("b", "unexpected")]);
+    assert.equal(result.status, "server_unavailable");
+    assert.match(result.message ?? "", /a failed \(server_unavailable\)/);
+    assert.match(result.message ?? "", /b failed \(error\): unexpected/);
+  });
+
+  it("prefers a retryable status", () => {
+    const result = allFailedResult([failure("a", "server_unavailable"), failure("b", "server_starting")]);
+    assert.equal(result.status, "server_starting");
+  });
+});
+
+describe("withFailures", () => {
+  it("leaves a result alone when nothing failed", () => {
+    const result = { status: "ok" as const, data: "x" };
+    assert.equal(withFailures(result, []), result);
+  });
+
+  it("appends failed servers after the existing message", () => {
+    const result = withFailures({ status: "ok" as const, message: "2 result(s)" }, [failure("a", "server_starting")]);
+    assert.equal(result.status, "ok");
+    assert.match(result.message ?? "", /^2 result\(s\)\na failed \(server_starting\)/);
+  });
+
+  it("uses the failure note as the message when there was none", () => {
+    const result = withFailures({ status: "ok" as const }, [failure("a", "server_starting")]);
+    assert.match(result.message ?? "", /^a failed/);
   });
 });
 

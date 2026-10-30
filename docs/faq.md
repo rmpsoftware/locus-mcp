@@ -18,7 +18,7 @@ More setup detail: [usage guide](./usage.md)
 
 ## What is Locus?
 
-Locus is an open-source MCP server that connects AI coding agents to language servers — the same programs IDEs use for go-to-definition, find references, types, and error checking. Your agent gets six tools (`locate`, `refs`, `hover`, `diagnostics`, `status`, `rename`) without wading through raw protocol JSON.
+Locus is an open-source MCP server that connects AI coding agents to language servers — the same programs IDEs use for go-to-definition, find references, types, and error checking. Your agent gets seven tools (`locate`, `refs`, `hover`, `diagnostics`, `status`, `rename`, `list_projects`) without wading through raw protocol JSON.
 
 ## How is Locus different from grep or ripgrep?
 
@@ -38,7 +38,7 @@ Not a drop-in substitute. Different scope, different install:
 
 | | Locus | Serena |
 |---|-------|--------|
-| Install | `npx @paladini/locus-mcp` | `uv tool install serena-agent` |
+| Install | `npx @rmpsoftware/locus-mcp` | `uv tool install serena-agent` |
 | Tools | 6 (navigation + diagnostics) | Many (edit, memory, refactor, …) |
 | Edits code | No — host Edit tool | Yes, inside MCP |
 | Languages (built-in) | TS/JS, Python, Go, Rust | 40+ adapters |
@@ -49,15 +49,15 @@ Built-in adapters: TypeScript/JavaScript (`typescript-language-server`), Python 
 
 ## Do I need language servers installed?
 
-Yes. Locus asks language servers for answers — it does not parse code itself. Run `npx @paladini/locus-mcp check` in your project to verify binaries are on your PATH.
+Yes. Locus asks language servers for answers — it does not parse code itself. Run `npx @rmpsoftware/locus-mcp check` in your project to verify binaries are on your PATH.
 
 ## What MCP tools does Locus expose?
 
-Six tools: `locate`, `refs`, `hover`, `diagnostics`, `status`, `rename`. Full reference: [tools.md](./tools.md).
+Seven tools: `locate`, `refs`, `hover`, `diagnostics`, `status`, `rename`, `list_projects`. Full reference: [tools.md](./tools.md).
 
 ## Can I use Locus with Cursor, Codex, or Claude Code?
 
-Yes. Add Locus to your MCP config with `npx @paladini/locus-mcp serve` and set `cwd` to your project root. Step-by-step: [usage.md](./usage.md).
+Yes. Add Locus to your MCP config with `npx @rmpsoftware/locus-mcp serve` and set `cwd` to your project root. Step-by-step: [usage.md](./usage.md).
 
 ## What config files does Locus read?
 
@@ -69,7 +69,7 @@ In order of discovery (walks up from cwd):
 
 ## Is Locus published on npm?
 
-Yes: `@paladini/locus-mcp` (CLI + MCP server) and `@paladini/locus-core` (library). See [publishing.md](./publishing.md).
+Yes: `@rmpsoftware/locus-mcp` (CLI + MCP server) and `@rmpsoftware/locus-core` (library). See [publishing.md](./publishing.md).
 
 ## How do I contribute?
 

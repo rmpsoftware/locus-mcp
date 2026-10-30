@@ -1,6 +1,6 @@
 # Usage Guide
 
-Locus is an MCP server your AI agent calls during conversations. You configure it once; the agent uses six tools to navigate code by meaning — not by searching for text strings.
+Locus is an MCP server your AI agent calls during conversations. You configure it once; the agent uses seven tools to navigate code by meaning — not by searching for text strings.
 
 This guide is written for **people who use AI agents to work on code**, whether or not you write code yourself.
 
@@ -21,13 +21,13 @@ flowchart LR
 | Who | Does what |
 |-----|-----------|
 | **You** | Run `init` and `check` once; paste MCP config; reload your agent |
-| **Your agent host** | Spawns `npx @paladini/locus-mcp serve` automatically |
+| **Your agent host** | Spawns `npx @rmpsoftware/locus-mcp serve` automatically |
 | **Your agent** | Calls MCP tools (`locate`, `refs`, …) — never shell CLI commands |
 | **Locus** | Translates tool calls into language-server requests |
 
 > Your agent does **not** run `locus locate` in a terminal. It calls the MCP tool named `locate`. The host starts the server; you do not need to run `serve` manually.
 
-## The six tools
+## The seven tools
 
 | Tool | Use when you need to… |
 |------|------------------------|
@@ -37,6 +37,7 @@ flowchart LR
 | [`diagnostics`](./tools.md#diagnostics) | Check for errors and warnings |
 | [`status`](./tools.md#status) | See if language servers are ready |
 | [`rename`](./tools.md#rename) | Preview what a rename would affect |
+| [`list_projects`](./tools.md#list_projects) | Discover configured project IDs, roots, and languages |
 
 Full parameters and examples: [tools.md](./tools.md)
 
@@ -50,8 +51,8 @@ Full parameters and examples: [tools.md](./tools.md)
 2. Language servers for your project's languages ([getting started — language servers](./getting-started.md#step-2-install-language-servers))
 3. In your project root:
    ```bash
-   npx @paladini/locus-mcp init
-   npx @paladini/locus-mcp check
+   npx @rmpsoftware/locus-mcp init
+   npx @rmpsoftware/locus-mcp check
    ```
 
 ### Cursor
@@ -63,7 +64,7 @@ Full parameters and examples: [tools.md](./tools.md)
   "mcpServers": {
     "locus": {
       "command": "npx",
-      "args": ["-y", "@paladini/locus-mcp", "serve"],
+      "args": ["-y", "@rmpsoftware/locus-mcp", "serve"],
       "cwd": "/absolute/path/to/your/project"
     }
   }
@@ -73,7 +74,7 @@ Full parameters and examples: [tools.md](./tools.md)
 2. Set `cwd` to your project's **absolute path**.
 3. Reload MCP servers in Cursor (Command Palette → "MCP: Reload" or restart Cursor).
 
-> **Screenshot placeholder:** Cursor MCP panel showing `locus` connected with six tools listed.
+> **Screenshot placeholder:** Cursor MCP panel showing `locus` connected with seven tools listed.
 
 **Local development** (from a Locus clone):
 
@@ -98,7 +99,7 @@ Codex reads MCP config from `~/.codex/config.toml` (global) or `.codex/config.to
 ```toml
 [mcp_servers.locus]
 command = "npx"
-args = ["-y", "@paladini/locus-mcp", "serve"]
+args = ["-y", "@rmpsoftware/locus-mcp", "serve"]
 cwd = "/absolute/path/to/your/project"
 ```
 
@@ -109,7 +110,7 @@ If language servers are slow to start, increase the timeout:
 ```toml
 [mcp_servers.locus]
 command = "npx"
-args = ["-y", "@paladini/locus-mcp", "serve"]
+args = ["-y", "@rmpsoftware/locus-mcp", "serve"]
 cwd = "/absolute/path/to/your/project"
 startup_timeout_sec = 30
 ```
@@ -127,7 +128,7 @@ Add the same JSON block as Cursor to Claude Code MCP settings:
   "mcpServers": {
     "locus": {
       "command": "npx",
-      "args": ["-y", "@paladini/locus-mcp", "serve"],
+      "args": ["-y", "@rmpsoftware/locus-mcp", "serve"],
       "cwd": "/absolute/path/to/your/project"
     }
   }
@@ -194,10 +195,10 @@ Optional: install the Cursor post-edit hook from `@paladini/adapters` to run dia
 ## CLI commands (for you, not your agent)
 
 ```bash
-npx @paladini/locus-mcp init    # Create config in your project (once)
-npx @paladini/locus-mcp check   # Verify language servers are installed
-npx @paladini/locus-mcp warm    # Pre-start servers (optional)
-npx @paladini/locus-mcp serve   # Started by your MCP host — not manually
+npx @rmpsoftware/locus-mcp init    # Create config in your project (once)
+npx @rmpsoftware/locus-mcp check   # Verify language servers are installed
+npx @rmpsoftware/locus-mcp warm    # Pre-start servers (optional)
+npx @rmpsoftware/locus-mcp serve   # Started by your MCP host — not manually
 ```
 
 ---
@@ -207,7 +208,7 @@ npx @paladini/locus-mcp serve   # Started by your MCP host — not manually
 ### Run `check` first
 
 ```bash
-npx @paladini/locus-mcp check
+npx @rmpsoftware/locus-mcp check
 ```
 
 Fix any `MISSING` entries before expecting useful agent results.
@@ -217,7 +218,7 @@ Fix any `MISSING` entries before expecting useful agent results.
 The language server is still booting. Wait a few seconds, call `status`, or run:
 
 ```bash
-npx @paladini/locus-mcp warm
+npx @rmpsoftware/locus-mcp warm
 ```
 
 ### MCP server not appearing

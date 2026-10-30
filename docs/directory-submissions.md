@@ -11,17 +11,17 @@ Use these details for all directory submissions:
 | **Name** | locus-mcp |
 | **Title** | Locus — LSP Code Intelligence |
 | **Description** | Lightweight MCP server for LSP code intelligence — symbol lookup, references, types, and diagnostics for AI coding agents. |
-| **npm package** | `@paladini/locus-mcp` |
-| **MCP Registry name** | `io.github.paladini/locus-mcp` |
-| **Repository** | https://github.com/paladini/locus-mcp |
+| **npm package** | `@rmpsoftware/locus-mcp` |
+| **MCP Registry name** | `io.github.rmpsoftware/locus-mcp` |
+| **Repository** | https://github.com/rmpsoftware/locus-mcp |
 | **License** | MIT |
 | **Transport** | stdio |
-| **Install command** | `npx -y @paladini/locus-mcp serve` |
+| **Install command** | `npx -y @rmpsoftware/locus-mcp serve` |
 | **Author** | Fernando Paladini |
 
 ## GitHub Repository Topics
 
-Add these topics to https://github.com/paladini/locus-mcp/settings (improves Glama and directory discovery):
+Add these topics to https://github.com/rmpsoftware/locus-mcp/settings (improves Glama and directory discovery):
 
 - `mcp`
 - `model-context-protocol`
@@ -31,7 +31,7 @@ Add these topics to https://github.com/paladini/locus-mcp/settings (improves Gla
 
 | Directory | URL | Status | Notes |
 |-----------|-----|--------|-------|
-| MCP Registry | https://registry.modelcontextprotocol.io | **Pending** | `io.github.paladini/locus-mcp` v0.1.2 — automated via `server.json` + publish workflow |
+| MCP Registry | https://registry.modelcontextprotocol.io | **Pending** | `io.github.rmpsoftware/locus-mcp` v0.1.5 — automated via `server.json` + publish workflow |
 
 ## AI Tool Directories
 
@@ -39,10 +39,10 @@ Add these topics to https://github.com/paladini/locus-mcp/settings (improves Gla
 |-----------|-----|--------|-------|
 | Glama | https://glama.ai/mcp/servers | **Pending sync** | `glama.json` + GitHub topics; indexes after MCP Registry (~minutes) |
 | PulseMCP | https://www.pulsemcp.com | **Pending sync** | Auto-sync from registry; expect 24–48h; email hello@pulsemcp.com if delayed |
-| mcp.so | https://mcp.so/submit | **Ready** | Submit `https://github.com/paladini/locus-mcp` after GitHub sign-in |
-| Smithery | https://smithery.ai/new | **Ready** | Upload `locus-mcp.mcpb` from GitHub Release; CLI: `smithery mcp publish ./locus-mcp.mcpb -n paladini/locus-mcp` |
-| Cursor Directory (MCP manual) | https://cursor.directory/mcp/new | **Ready** | npm: `@paladini/locus-mcp`, install: `npx -y @paladini/locus-mcp serve` |
-| Cursor Directory (Plugin) | https://cursor.directory/plugins/new | **Optional** | Auto scan `https://github.com/paladini/locus-mcp` after GitHub sign-in |
+| mcp.so | https://mcp.so/submit | **Ready** | Submit `https://github.com/rmpsoftware/locus-mcp` after GitHub sign-in |
+| Smithery | https://smithery.ai/new | **Ready** | Upload `locus-mcp.mcpb` from GitHub Release; CLI: `smithery mcp publish ./locus-mcp.mcpb -n rmpsoftware/locus-mcp` |
+| Cursor Directory (MCP manual) | https://cursor.directory/mcp/new | **Ready** | npm: `@rmpsoftware/locus-mcp`, install: `npx -y @rmpsoftware/locus-mcp serve` |
+| Cursor Directory (Plugin) | https://cursor.directory/plugins/new | **Optional** | Auto scan `https://github.com/rmpsoftware/locus-mcp` after GitHub sign-in |
 
 ## Community Lists
 
@@ -57,22 +57,22 @@ Add these topics to https://github.com/paladini/locus-mcp/settings (improves Gla
 ```markdown
 ### Locus
 
-- **Description:** Lightweight MCP server for LSP code intelligence — symbol lookup, references, types, and diagnostics. Six focused tools for AI coding agents.
-- **npm:** `@paladini/locus-mcp`
-- **Install:** `npx -y @paladini/locus-mcp serve`
-- **Repository:** https://github.com/paladini/locus-mcp
+- **Description:** Lightweight MCP server for LSP code intelligence — symbol lookup, references, types, and diagnostics. Seven focused tools for AI coding agents.
+- **npm:** `@rmpsoftware/locus-mcp`
+- **Install:** `npx -y @rmpsoftware/locus-mcp serve`
+- **Repository:** https://github.com/rmpsoftware/locus-mcp
 ```
 
 ## Post-Publish Verification
 
-After the first `v0.1.2` tag push, verify:
+After the first `v0.1.5` tag push, verify:
 
-- [ ] npm: https://www.npmjs.com/package/@paladini/locus-mcp shows v0.1.2
-- [ ] npm: https://www.npmjs.com/package/@paladini/locus-core shows v0.1.2
-- [ ] MCP Registry: search `io.github.paladini/locus-mcp` at https://registry.modelcontextprotocol.io
+- [ ] npm: https://www.npmjs.com/package/@rmpsoftware/locus-mcp shows v0.1.5
+- [ ] npm: https://www.npmjs.com/package/@rmpsoftware/locus-core shows v0.1.5
+- [ ] MCP Registry: search `io.github.rmpsoftware/locus-mcp` at https://registry.modelcontextprotocol.io
 - [ ] GitHub Packages: both packages visible under repo Packages tab
-- [ ] GitHub Release: `locus-mcp.mcpb` attached at https://github.com/paladini/locus-mcp/releases/tag/v0.1.2
-- [ ] Glama: https://glama.ai/mcp/servers/paladini/locus-mcp returns 200 (after sync)
+- [ ] GitHub Release: `locus-mcp.mcpb` attached at https://github.com/rmpsoftware/locus-mcp/releases/tag/v0.1.5
+- [ ] Glama: https://glama.ai/mcp/servers/rmpsoftware/locus-mcp returns 200 (after sync)
 - [ ] Cursor deeplink installs successfully (user test)
 - [ ] Claude Desktop `.mcpb` installs and connects (user test)
 - [ ] mcp.so submission completed

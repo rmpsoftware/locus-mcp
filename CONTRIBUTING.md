@@ -49,8 +49,8 @@ npm test
 Package-level:
 
 ```bash
-npm run test -w @paladini/locus-core
-npm run test -w @paladini/locus-mcp
+npm run test -w @rmpsoftware/locus-core
+npm run test -w @rmpsoftware/locus-mcp
 ```
 
 See [docs/contributing.md](docs/contributing.md) for mock vs integration test guidance.

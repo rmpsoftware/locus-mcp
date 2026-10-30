@@ -4,6 +4,7 @@ import {
   formatHover,
   formatDiagnostics,
   formatWorkspaceDiagnostics,
+  formatHovers,
   formatStatus,
   formatRenamePreview,
   formatLocations,
@@ -91,11 +92,32 @@ describe("formatWorkspaceDiagnostics", () => {
   });
 });
 
+describe("formatHovers", () => {
+  const hover = (value: string) => ({ contents: value });
+
+  it("returns a lone answer without a server heading", () => {
+    assert.equal(formatHovers([{ server: "a", hover: hover("type A") }, { server: "b", hover: null }]), "type A");
+  });
+
+  it("collapses identical answers", () => {
+    assert.equal(formatHovers([{ server: "a", hover: hover("same") }, { server: "b", hover: hover("same") }]), "same");
+  });
+
+  it("labels distinct answers by server", () => {
+    const text = formatHovers([{ server: "a", hover: hover("type A") }, { server: "b", hover: hover("type B") }]);
+    assert.equal(text, "## a\n\ntype A\n\n## b\n\ntype B");
+  });
+
+  it("reports no information when nothing answered", () => {
+    assert.match(formatHovers([{ server: "a", hover: null }, { server: "b", hover: hover(" ") }]), /No hover information/);
+  });
+});
+
 describe("formatStatus", () => {
   it("includes server state and binary availability", () => {
     const text = formatStatus([
       {
-        languageId: "typescript",
+        id: "typescript",
         command: "typescript-language-server",
         state: "ready",
         binaryAvailable: true,
@@ -103,7 +125,7 @@ describe("formatStatus", () => {
         openDocuments: 2,
       },
       {
-        languageId: "go",
+        id: "go",
         command: "gopls",
         state: "stopped",
         binaryAvailable: false,

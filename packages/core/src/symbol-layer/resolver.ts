@@ -3,6 +3,7 @@ import type { SymbolInformation } from "../lsp-client/types.js";
 import { uriToFilePath } from "../lsp-client/connection.js";
 import type { LspClient } from "../lsp-client/client.js";
 import { relativePath } from "../lsp-client/client.js";
+import { fanOut, mergeSymbols, type ServerFailure } from "../lsp-client/fan-out.js";
 
 export interface ResolvedSymbol {
   name: string;
@@ -19,6 +20,7 @@ export interface SymbolResolveResult {
   status: "ok" | "no_results" | "ambiguous_symbol";
   symbols: ResolvedSymbol[];
   message?: string;
+  failures: ServerFailure[];
 }
 
 export interface SymbolResolverOptions {
@@ -29,21 +31,19 @@ export interface SymbolResolverOptions {
 export class SymbolResolver {
   constructor(private readonly options: SymbolResolverOptions) {}
 
-  async findByName(client: LspClient, query: string): Promise<SymbolResolveResult> {
+  async findByName(clients: LspClient[], query: string, filePath?: string): Promise<SymbolResolveResult> {
     const trimmed = query.trim();
     if (!trimmed) {
-      return { status: "no_results", symbols: [], message: "Empty query" };
+      return { status: "no_results", symbols: [], message: "Empty query", failures: [] };
     }
 
-    const workspaceSymbols = await client.workspaceSymbol(trimmed);
-    let candidates = workspaceSymbols.map((s) => toResolvedSymbol(s, this.options.rootPath));
+    const { symbols, failures } = await this.searchWorkspace(clients, trimmed, filePath);
+    const candidates = symbols.map((s) => toResolvedSymbol(s, this.options.rootPath));
 
-    if (candidates.length === 0) {
-      candidates = await this.fuzzySearch(client, trimmed);
-    }
+    return { ...this.pickMatches(this.rankByQuery(candidates, trimmed), trimmed), failures };
+  }
 
-    candidates = this.rankByQuery(candidates, trimmed);
-
+  private pickMatches(candidates: ResolvedSymbol[], trimmed: string): Omit<SymbolResolveResult, "failures"> {
     if (candidates.length === 0) {
       return { status: "no_results", symbols: [], message: `No symbols matching "${trimmed}"` };
     }
@@ -104,10 +104,40 @@ export class SymbolResolver {
     };
   }
 
-  private async fuzzySearch(client: LspClient, query: string): Promise<ResolvedSymbol[]> {
+  private async searchWorkspace(
+    clients: LspClient[],
+    query: string,
+    filePath?: string,
+  ): Promise<{ symbols: SymbolInformation[]; failures: ServerFailure[] }> {
+    const exact = await fanOut(clients, async (client) => {
+      if (filePath) await client.didOpen(filePath);
+      return client.workspaceSymbol(query);
+    });
+    const symbols = mergeSymbols(exact.results.map((r) => r.value));
+    if (symbols.length > 0) {
+      return { symbols, failures: exact.failures };
+    }
+
     const { member } = this.parseQualifiedName(query);
-    const partial = await client.workspaceSymbol(member);
-    return partial.map((s) => toResolvedSymbol(s, this.options.rootPath));
+    const answering = exact.results.map((r) => r.client);
+    const partial = member === query ? exact : await fanOut(answering, (client) => client.workspaceSymbol(member));
+    const partialSymbols = mergeSymbols(partial.results.map((r) => r.value));
+    const failures = member === query ? exact.failures : [...exact.failures, ...partial.failures];
+    if (partialSymbols.length > 0 || !filePath) {
+      return { symbols: partialSymbols, failures };
+    }
+
+    const documents = await fanOut(partial.results.map((r) => r.client), (client) => client.documentSymbol(filePath));
+    const lowerMember = member.toLowerCase();
+    const documentSymbols = mergeSymbols(documents.results.map((r) => r.value)).filter((symbol) =>
+      symbol.name.toLowerCase().includes(lowerMember) ||
+      `${symbol.containerName ?? ""}.${symbol.name}`.toLowerCase().includes(lowerMember),
+    );
+
+    return {
+      symbols: documentSymbols,
+      failures: [...failures, ...documents.failures],
+    };
   }
 
   private rankByQuery(symbols: ResolvedSymbol[], query: string): ResolvedSymbol[] {

@@ -1,5 +1,31 @@
-import type { LocusResult } from "@paladini/locus-core";
-import type { LspClient } from "@paladini/locus-core";
+import type { LocusResult, ServerFailure } from "@rmpsoftware/locus-core";
+import { z } from "zod";
+import type { LocusServerContext } from "../context.js";
+
+export const FILE_PATH_HINT = "Absolute path, path relative to the project or a server root, or a bare filename";
+export const SERVER_FILTER_PROPERTIES = {
+  project: { type: "string", minLength: 1, description: "Restrict to the server configuration with this project ID" },
+  lang: { type: "string", minLength: 1, description: "Restrict to the server configuration with this language ID" },
+} as const;
+export const serverFilterSchema = {
+  project: z.string().min(1).optional(),
+  lang: z.string().min(1).optional(),
+};
+
+export function serverFilterError(
+  ctx: LocusServerContext,
+  filter: { project?: string; lang?: string },
+): LocusResult | undefined {
+  if (filter.project === undefined && filter.lang === undefined) return undefined;
+  if (ctx.configs.some((config) =>
+    (filter.project === undefined || config.id === filter.project) &&
+    (filter.lang === undefined || config.languageId === filter.lang),
+  )) return undefined;
+  return {
+    status: "server_unavailable",
+    message: `No server configuration matches${filter.project !== undefined ? ` project "${filter.project}"` : ""}${filter.lang !== undefined ? ` lang "${filter.lang}"` : ""}`,
+  };
+}
 
 export function handleLspError(err: unknown): LocusResult {
   const message = err instanceof Error ? err.message : String(err);
@@ -19,11 +45,26 @@ export function handleLspError(err: unknown): LocusResult {
   return { status: "error", message };
 }
 
-export async function getClientForSymbol(
-  ctx: { manager: { getClientForFile: (f: string) => Promise<LspClient | undefined> } },
-  filePath: string,
-): Promise<LspClient | undefined> {
-  return ctx.manager.getClientForFile(filePath);
+export function allFailedResult(failures: ServerFailure[]): LocusResult {
+  const results = failures.map((f) => handleLspError(f.error));
+  if (results.length === 1) return results[0]!;
+
+  const retryable = results.find((r) => r.status === "server_starting");
+  return { status: (retryable ?? results[0]!).status, message: describeFailures(failures) };
+}
+
+export function withFailures<T>(result: LocusResult<T>, failures: ServerFailure[]): LocusResult<T> {
+  if (failures.length === 0) return result;
+  return { ...result, message: [result.message, describeFailures(failures)].filter(Boolean).join("\n") };
+}
+
+function describeFailures(failures: ServerFailure[]): string {
+  return failures
+    .map(({ client, error }) => {
+      const { status, message } = handleLspError(error);
+      return `${client.id} failed (${status}): ${message}`;
+    })
+    .join("\n");
 }
 
 export function parsePosition(input?: string): { file: string; line: number; character: number } | undefined {

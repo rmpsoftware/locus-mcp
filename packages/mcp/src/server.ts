@@ -11,8 +11,9 @@ import { hoverTool, handleHover } from "./tools/hover.js";
 import { diagnosticsTool, handleDiagnostics } from "./tools/diagnostics.js";
 import { statusTool, handleStatus } from "./tools/status.js";
 import { renameTool, handleRename } from "./tools/rename.js";
+import { listProjectsTool, handleListProjects } from "./tools/list-projects.js";
 
-const TOOLS = [locateTool, refsTool, hoverTool, diagnosticsTool, statusTool, renameTool];
+const TOOLS = [locateTool, refsTool, hoverTool, diagnosticsTool, statusTool, renameTool, listProjectsTool];
 
 export type { LocusServerContext } from "./context.js";
 
@@ -33,17 +34,19 @@ export async function createLocusServer(cwd?: string): Promise<{ server: Server;
     try {
       switch (name) {
         case "locate":
-          return handleLocate(ctx, args);
+          return await handleLocate(ctx, args);
         case "refs":
-          return handleRefs(ctx, args);
+          return await handleRefs(ctx, args);
         case "hover":
-          return handleHover(ctx, args);
+          return await handleHover(ctx, args);
         case "diagnostics":
-          return handleDiagnostics(ctx, args);
+          return await handleDiagnostics(ctx, args);
         case "status":
-          return handleStatus(ctx, args);
+          return await handleStatus(ctx, args);
         case "rename":
-          return handleRename(ctx, args);
+          return await handleRename(ctx, args);
+        case "list_projects":
+          return await handleListProjects(ctx);
         default:
           return {
             content: [{ type: "text", text: `Unknown tool: ${name}` }],

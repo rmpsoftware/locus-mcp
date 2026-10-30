@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LspConnection } from "../src/lsp-client/connection.js";
+import { LspClient } from "../src/lsp-client/client.js";
 
 const FIXTURE_DIR = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 const FAKE_LSP = join(FIXTURE_DIR, "fake-lsp.mjs");
@@ -81,6 +82,51 @@ describe("LspConnection with fake-lsp", () => {
     await connection.start();
     await assert.rejects(() => connection.request("initialize", {}), /timed out/);
     await connection.stop();
+  });
+
+  it("allows an individual request to use a shorter timeout", async () => {
+    connection = new LspConnection({
+      command: process.execPath,
+      args: [HANG_LSP],
+      cwd: process.cwd(),
+      requestTimeoutMs: 5000,
+    });
+    await connection.start();
+    const started = Date.now();
+    await assert.rejects(() => connection.request("textDocument/diagnostic", {}, 100), /timed out/);
+    assert.ok(Date.now() - started < 2000);
+  });
+
+  it("collects pull diagnostics from a real server process", async () => {
+    const client = new LspClient({
+      rootPath: process.cwd(),
+      serverConfig: {
+        id: "pull", languageId: "typescript", extensions: [".ts"],
+        command: process.execPath, args: [FAKE_LSP, "pull"],
+      },
+    });
+    try {
+      const diagnostics = await client.collectDiagnostics(join(process.cwd(), "package.json"), 1000);
+      assert.equal(diagnostics[0]?.message, "pull problem");
+    } finally {
+      await client.stop();
+    }
+  });
+
+  it("reports a server exit during the initialization delay", async () => {
+    const client = new LspClient({
+      rootPath: process.cwd(),
+      serverConfig: {
+        id: "exiting", languageId: "typescript", extensions: [".ts"],
+        command: process.execPath, args: [FAKE_LSP, "exit-on-initialized"], initSleep: 5000,
+      },
+    });
+    try {
+      await assert.rejects(client.start(), /server_unavailable/);
+      assert.equal(client.serverState, "unavailable");
+    } finally {
+      await client.stop();
+    }
   });
 
   it("stop clears running state", async () => {

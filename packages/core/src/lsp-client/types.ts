@@ -42,7 +42,13 @@ export interface Diagnostic {
 
 export interface PublishDiagnosticsParams {
   uri: string;
+  version?: number | null;
   diagnostics: Diagnostic[];
+}
+
+export interface FullDocumentDiagnosticReport {
+  kind: "full";
+  items: Diagnostic[];
 }
 
 export interface DocumentSymbol {

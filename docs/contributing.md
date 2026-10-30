@@ -16,7 +16,7 @@ Thank you for your interest in contributing. This document covers development se
 ### Clone and install
 
 ```bash
-git clone https://github.com/paladini/locus-mcp.git
+git clone https://github.com/rmpsoftware/locus-mcp.git
 cd locus-mcp
 npm install
 npm run build
@@ -25,8 +25,8 @@ npm run build
 ### Project structure
 
 ```
-packages/core/      @paladini/locus-core — LSP client, registry, symbols, format
-packages/mcp/       @paladini/locus-mcp — MCP server + CLI (locus binary)
+packages/core/      @rmpsoftware/locus-core — LSP client, registry, symbols, format
+packages/mcp/       @rmpsoftware/locus-mcp — MCP server + CLI (locus binary)
 packages/adapters/  Cursor hooks + Claude skill stubs
 evals/fixtures/     Integration test fixtures (TypeScript, Python)
 docs/               User and contributor documentation
@@ -44,8 +44,8 @@ docs/               User and contributor documentation
 ### Package-level tests
 
 ```bash
-npm run test -w @paladini/locus-core
-npm run test -w @paladini/locus-mcp
+npm run test -w @rmpsoftware/locus-core
+npm run test -w @rmpsoftware/locus-mcp
 ```
 
 ### CLI during development
@@ -93,7 +93,7 @@ Integration tests skip automatically when LSP binaries are not on `PATH`.
 - Strict TypeScript — match existing patterns
 - Minimal diffs; no drive-by refactors
 - User-facing strings in English
-- Keep MCP surface at six tools unless discussed in an issue
+- Keep the MCP surface small; discuss new tools before adding them
 
 ## Branch naming
 

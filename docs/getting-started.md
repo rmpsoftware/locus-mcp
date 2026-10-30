@@ -13,7 +13,7 @@ flowchart LR
   You[You] -->|configure once| Host[Cursor / Codex / Claude Code]
   Host -->|spawns| Locus[Locus MCP server]
   Locus -->|talks to| LS[Language server for your code]
-  Agent[Your AI agent] -->|calls 6 tools| Locus
+  Agent[Your AI agent] -->|calls 7 tools| Locus
 ```
 
 - **You** install prerequisites and paste an MCP config block.
@@ -61,8 +61,8 @@ Only install what you need. You can add more later.
 Run these in your **project root** (the folder with your code):
 
 ```bash
-npx @paladini/locus-mcp init
-npx @paladini/locus-mcp check
+npx @rmpsoftware/locus-mcp init
+npx @rmpsoftware/locus-mcp check
 ```
 
 - `init` creates config files (`locus.toml`, `locus.json`) so Locus knows your project root and languages.
@@ -80,7 +80,7 @@ If something shows `MISSING`, install that language server and run `check` again
 Optional — pre-start servers before a long agent session:
 
 ```bash
-npx @paladini/locus-mcp warm
+npx @rmpsoftware/locus-mcp warm
 ```
 
 ## Step 4: Add Locus to your agent
@@ -94,7 +94,7 @@ Pick your tool and paste the config. Replace `/absolute/path/to/your/project` wi
   "mcpServers": {
     "locus": {
       "command": "npx",
-      "args": ["-y", "@paladini/locus-mcp", "serve"],
+      "args": ["-y", "@rmpsoftware/locus-mcp", "serve"],
       "cwd": "/absolute/path/to/your/project"
     }
   }
@@ -106,7 +106,7 @@ Pick your tool and paste the config. Replace `/absolute/path/to/your/project` wi
 ```toml
 [mcp_servers.locus]
 command = "npx"
-args = ["-y", "@paladini/locus-mcp", "serve"]
+args = ["-y", "@rmpsoftware/locus-mcp", "serve"]
 cwd = "/absolute/path/to/your/project"
 ```
 
@@ -134,7 +134,7 @@ Your agent should call the `locate` tool — not run shell commands like `grep` 
 |---------|-----|
 | `check` reports MISSING binary | Install that language server; ensure it is on your PATH |
 | Agent uses grep instead of Locus | Remind it: *"Use the Locus MCP tool `locate`, not grep."* |
-| `server_starting` in tool output | Wait a few seconds and retry, or run `npx @paladini/locus-mcp warm` |
+| `server_starting` in tool output | Wait a few seconds and retry, or run `npx @rmpsoftware/locus-mcp warm` |
 | MCP server not listed in host | Confirm `cwd` is an absolute path to your project root; reload MCP |
 
 ## Installation options
@@ -142,19 +142,19 @@ Your agent should call the `locate` tool — not run shell commands like `grep` 
 **Recommended — no global install:**
 
 ```bash
-npx @paladini/locus-mcp --help
+npx @rmpsoftware/locus-mcp --help
 ```
 
 **Global install:**
 
 ```bash
-npm install -g @paladini/locus-mcp
+npm install -g @rmpsoftware/locus-mcp
 ```
 
 **From source (contributors):**
 
 ```bash
-git clone https://github.com/paladini/locus-mcp.git
+git clone https://github.com/rmpsoftware/locus-mcp.git
 cd locus-mcp
 npm install
 npm run build
@@ -167,5 +167,5 @@ For local development MCP config, see [usage.md](./usage.md).
 - [Usage guide](./usage.md) — detailed host setup, example prompts, troubleshooting
 - [FAQ](./faq.md) — "Do I need to be a programmer?", "What's MCP?", and more
 - [Who is Locus for?](./positioning.md) — fit and alternatives
-- [Tools reference](./tools.md) — what each of the six tools does
+- [Tools reference](./tools.md) — what each of the seven tools does
 - [Configuration](./configuration.md) — customize languages and server paths

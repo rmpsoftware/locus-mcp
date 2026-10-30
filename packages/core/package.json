@@ -1,5 +1,5 @@
 {
-  "name": "@paladini/locus-core",
+  "name": "@rmpsoftware/locus-core",
   "version": "0.1.5",
   "description": "LSP client, registry, symbol layer, and format utilities for Locus — MCP server for LSP code intelligence",
   "license": "MIT",
@@ -12,19 +12,22 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "engines": {
     "node": ">=22"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/paladini/locus-mcp.git",
+    "url": "git+https://github.com/rmpsoftware/locus-mcp.git",
     "directory": "packages/core"
   },
   "bugs": {
-    "url": "https://github.com/paladini/locus-mcp/issues"
+    "url": "https://github.com/rmpsoftware/locus-mcp/issues"
   },
-  "homepage": "https://github.com/paladini/locus-mcp/tree/main/packages/core#readme",
+  "homepage": "https://github.com/rmpsoftware/locus-mcp/tree/main/packages/core#readme",
   "keywords": [
     "lsp",
     "language-server-protocol",
@@ -38,6 +41,7 @@
     "access": "public"
   },
   "scripts": {
+    "prepack": "npm run build",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/**/*.test.ts",
