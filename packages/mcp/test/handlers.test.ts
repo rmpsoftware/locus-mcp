@@ -324,6 +324,67 @@ describe("handleHover", () => {
     assert.match(resultText(result), /status: ok/);
   });
 
+  it("restricts name lookup to the supplied file and falls back to document symbols", async () => {
+    const range = (line: number) => ({ start: { line, character: 0 }, end: { line, character: 3 } });
+    const other = {
+      name: "Greeter", kind: 5,
+      location: { uri: filePathToUri(resolve(ROOT, "src/other.ts")), range: range(0) },
+    };
+    const local = {
+      ...other,
+      location: { uri: filePathToUri(resolve(ROOT, "src/index.ts")), range: range(1) },
+    };
+    const hovered: string[] = [];
+    const ctx = mockContext({
+      workspaceSymbol: async () => [other],
+      documentSymbol: async () => [local],
+      hover: async (file, line) => {
+        hovered.push(`${file}:${line}`);
+        return { contents: "local" };
+      },
+    });
+    const result = await handleHover(ctx, { name: "Greeter", file: "src/index.ts" });
+    assert.match(resultText(result), /local/);
+    assert.deepEqual(hovered, [`${resolve(ROOT, "src/index.ts")}:1`]);
+  });
+
+  it("chooses the supplied file when matching workspace symbols exist in multiple files", async () => {
+    const symbol = (file: string) => ({
+      name: "Greeter", kind: 5,
+      location: {
+        uri: filePathToUri(resolve(ROOT, file)),
+        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 7 } },
+      },
+    });
+    const ctx = mockContext({ workspaceSymbol: async () => [symbol("src/other.ts"), symbol("src/index.ts")] });
+    assert.match(resultText(await handleHover(ctx, { name: "Greeter", file: "src/index.ts" })), /status: ok/);
+  });
+
+  it("does not hover a matching symbol found only in another file", async () => {
+    const ctx = mockContext({
+      workspaceSymbol: async () => [{
+        name: "Greeter", kind: 5,
+        location: {
+          uri: filePathToUri(resolve(ROOT, "src/other.ts")),
+          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 7 } },
+        },
+      }],
+      hover: async () => assert.fail("must not hover another file"),
+    });
+    assert.match(resultText(await handleHover(ctx, { name: "Greeter", file: "src/index.ts" })), /status: no_results/);
+  });
+
+  it("rejects invalid positions instead of sending them to the server", async () => {
+    for (const position of ["src/index.ts:0:1", "src/index.ts:1:0", "bad", "src/index.ts:9007199254740993:1"]) {
+      const result = await handleHover(mockContext(), { position });
+      assert.equal(result.isError, true);
+      assert.match(resultText(result), /Position must be/);
+    }
+    for (const coordinates of [{ line: -1, character: 0 }, { line: 0.5, character: 0 }, { line: 0, character: -1 }]) {
+      await assert.rejects(handleHover(mockContext(), { file: "src/index.ts", ...coordinates }));
+    }
+  });
+
   it("returns error when position is missing", async () => {
     const result = await handleHover(mockContext(), { file: "src/index.ts" });
     assert.match(resultText(result), /status: error/);
@@ -511,7 +572,7 @@ describe("file resolution", () => {
     });
     ctx.manager.resolveFile = async (file) => {
       requested.push(file);
-      return { status: "ok", file: absolute };
+      return { status: "ok", file: resolve(ROOT, "src/index.ts") };
     };
 
     await handleHover(ctx, { name: "Greeter", file: "Helper.ts" });
@@ -662,6 +723,7 @@ describe("multiple servers", () => {
     const text = resultText(await handleHover(ctx, { name: "Greeter", file: "src/index.ts" }));
     assert.match(text, /status: ok/);
     assert.match(text, /type Info/);
+    assert.match(text, /broken failed/);
   });
 
   it("collects file diagnostics from servers concurrently", { timeout: 2000 }, async () => {

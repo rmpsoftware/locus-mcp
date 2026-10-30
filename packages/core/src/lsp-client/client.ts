@@ -1,4 +1,4 @@
-import { readFileSync, existsSync, watch, type FSWatcher } from "node:fs";
+import { readFileSync, watch, type FSWatcher } from "node:fs";
 import { extname, relative, resolve, isAbsolute } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import type {
@@ -47,6 +47,7 @@ export class LspClient {
   private activeWork = new Map<string | number, string>();
   private progressObserved = false;
   private diagnosticProvider?: { identifier?: string };
+  private textDocumentSync: { openClose: boolean; change: 0 | 1 | 2 } = { openClose: true, change: 1 };
   private restartAttempts = 0;
   private readonly maxRestarts = 3;
   private initialized = false;
@@ -116,7 +117,7 @@ export class LspClient {
       await this.openDocument(filePath, undefined, undefined, true, (version) => {
         waiter.version = version;
         waiter.afterSequence = this.diagnosticSequence;
-      });
+      }, true);
     } catch (err) {
       waiter.finish("unavailable");
       throw err;
@@ -218,6 +219,7 @@ export class LspClient {
 
       if (signal.aborted) throw new Error("server_unavailable");
       this.serverInfo = initResult.serverInfo;
+      this.textDocumentSync = parseTextDocumentSync(initResult.capabilities.textDocumentSync);
       const provider = initResult.capabilities.diagnosticProvider;
       this.diagnosticProvider = provider && typeof provider === "object"
         ? provider as { identifier?: string }
@@ -251,11 +253,11 @@ export class LspClient {
           text,
         };
         this.documents.set(uri, item);
-        this.connection.notify("textDocument/didOpen", { textDocument: item });
+        if (this.textDocumentSync.openClose) this.connection.notify("textDocument/didOpen", { textDocument: item });
         autoOpened.add(uri);
       }
       for (const doc of this.documents.values()) {
-        if (!autoOpened.has(doc.uri)) {
+        if (!autoOpened.has(doc.uri) && this.textDocumentSync.openClose) {
           this.connection.notify("textDocument/didOpen", { textDocument: doc });
         }
       }
@@ -327,42 +329,48 @@ export class LspClient {
     text?: string,
     bumpVersion = true,
     onVersion?: (version: number) => void,
+    forceChange = false,
   ): Promise<void> {
     await this.ensureReady();
 
     const uri = filePath.startsWith("file:") ? filePath : filePathToUri(filePath);
-    const content = text ?? (existsSync(uriToFilePath(uri)) ? readFileSync(uriToFilePath(uri), "utf8") : "");
+    const content = text ?? readFileSync(uriToFilePath(uri), "utf8");
     const lang = languageId ?? this.guessLanguageId(uri);
 
     const existing = this.documents.get(uri);
-    const version = bumpVersion ? (existing?.version ?? 0) + 1 : (existing?.version ?? 1);
+    if (existing && existing.text === content && !forceChange) {
+      onVersion?.(existing.version);
+      return;
+    }
+    const version = existing ? existing.version + 1 : 1;
 
     const item: TextDocumentItem = { uri, languageId: lang, version, text: content };
-    this.documents.set(uri, { uri, languageId: lang, version, text: content });
+    if (existing && !bumpVersion) {
+      throw new Error(`Cannot update changed document without a version bump: ${uri}`);
+    }
+    if (text !== undefined && !this.textDocumentSync.openClose && this.textDocumentSync.change === 0 &&
+        text !== readFileSync(uriToFilePath(uri), "utf8")) {
+      throw new Error(`Language server does not support synchronizing unsaved changes: ${uri}`);
+    }
+    this.documents.set(uri, item);
     onVersion?.(version);
-
     if (!existing) {
+      if (this.textDocumentSync.openClose) this.connection.notify("textDocument/didOpen", { textDocument: item });
+    } else if (this.textDocumentSync.change === 0 && this.textDocumentSync.openClose) {
+      this.connection.notify("textDocument/didClose", { textDocument: { uri } });
       this.connection.notify("textDocument/didOpen", { textDocument: item });
-    } else if (bumpVersion) {
+    } else if (this.textDocumentSync.change !== 0) {
       this.connection.notify("textDocument/didChange", {
         textDocument: { uri, version },
-        contentChanges: [{ text: content }],
+        contentChanges: [this.textDocumentSync.change === 2
+          ? { range: fullTextRange(existing.text), text: content }
+          : { text: content }],
       });
     }
   }
 
   async didChange(filePath: string, text: string): Promise<void> {
-    await this.ensureReady();
-    const uri = filePath.startsWith("file:") ? filePath : filePathToUri(filePath);
-    const existing = this.documents.get(uri);
-    const version = (existing?.version ?? 0) + 1;
-    const languageId = existing?.languageId ?? this.guessLanguageId(uri);
-
-    this.documents.set(uri, { uri, languageId, version, text });
-    this.connection.notify("textDocument/didChange", {
-      textDocument: { uri, version },
-      contentChanges: [{ text }],
-    });
+    return this.openDocument(filePath, undefined, text);
   }
 
   async workspaceSymbol(query: string): Promise<SymbolInformation[]> {
@@ -549,8 +557,7 @@ export class LspClient {
     const uri = filePathToUri(filePath);
     const existing = this.documents.get(uri);
     if (existing?.text === text) return;
-    if (!existing) await this.didOpen(filePath, undefined, text);
-    await this.didChange(filePath, text);
+    await this.didOpen(filePath, undefined, text);
   }
 
   private handleDiagnostics(params: PublishDiagnosticsParams): void {
@@ -606,6 +613,26 @@ export class LspClient {
     };
     return map[ext] ?? this.languageId;
   }
+}
+
+function parseTextDocumentSync(value: unknown): { openClose: boolean; change: 0 | 1 | 2 } {
+  if (value === undefined) return { openClose: true, change: 1 };
+  if (value === 0 || value === 1 || value === 2) return { openClose: value !== 0, change: value };
+  if (value && typeof value === "object") {
+    const sync = value as { openClose?: unknown; change?: unknown };
+    if (sync.change === undefined || sync.change === 0 || sync.change === 1 || sync.change === 2) {
+      return { openClose: sync.openClose === true, change: sync.change ?? 0 };
+    }
+  }
+  throw new Error("Invalid textDocumentSync capability");
+}
+
+function fullTextRange(text: string): import("./types.js").Range {
+  const lines = text.split(/\r\n|\r|\n/);
+  return {
+    start: { line: 0, character: 0 },
+    end: { line: lines.length - 1, character: lines[lines.length - 1]!.length },
+  };
 }
 
 function flattenDocumentSymbols(

@@ -35,7 +35,7 @@ describe("multiple language servers over MCP", () => {
       join(tempDir, "locus.json"),
       JSON.stringify({
         servers: [
-          { ...fakeServer("alpha"), args: [FAKE_LSP, "alpha", "workspace-open-file"] },
+          { ...fakeServer("alpha"), description: "Primary TypeScript project", args: [FAKE_LSP, "alpha", "workspace-open-file"] },
           { ...fakeServer("beta"), languageId: "javascript" },
           { id: "ghost", languageId: "typescript", extensions: [".ts"], command: "nonexistent-locus-lsp" },
         ],
@@ -133,7 +133,7 @@ describe("multiple language servers over MCP", () => {
   it("lists all configurations with their resolved roots without starting servers", async () => {
     const text = await call("list_projects", {});
     assert.deepEqual(JSON.parse(text), [
-      { project: "alpha", root: tempDir, language: "typescript" },
+      { project: "alpha", root: tempDir, language: "typescript", description: "Primary TypeScript project" },
       { project: "beta", root: tempDir, language: "javascript" },
       { project: "ghost", root: tempDir, language: "typescript" },
     ]);

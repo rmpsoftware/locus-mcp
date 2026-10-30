@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { SymbolInformation } from "../lsp-client/types.js";
 import { uriToFilePath } from "../lsp-client/connection.js";
 import type { LspClient } from "../lsp-client/client.js";
@@ -31,13 +32,13 @@ export interface SymbolResolverOptions {
 export class SymbolResolver {
   constructor(private readonly options: SymbolResolverOptions) {}
 
-  async findByName(clients: LspClient[], query: string, filePath?: string): Promise<SymbolResolveResult> {
+  async findByName(clients: LspClient[], query: string, filePath?: string, restrictToFile = false): Promise<SymbolResolveResult> {
     const trimmed = query.trim();
     if (!trimmed) {
       return { status: "no_results", symbols: [], message: "Empty query", failures: [] };
     }
 
-    const { symbols, failures } = await this.searchWorkspace(clients, trimmed, filePath);
+    const { symbols, failures } = await this.searchWorkspace(clients, trimmed, filePath, restrictToFile);
     const candidates = symbols.map((s) => toResolvedSymbol(s, this.options.rootPath));
 
     return { ...this.pickMatches(this.rankByQuery(candidates, trimmed), trimmed), failures };
@@ -108,12 +109,16 @@ export class SymbolResolver {
     clients: LspClient[],
     query: string,
     filePath?: string,
+    restrictToFile = false,
   ): Promise<{ symbols: SymbolInformation[]; failures: ServerFailure[] }> {
+    const inScope = (symbols: SymbolInformation[]) => restrictToFile && filePath
+      ? symbols.filter((symbol) => resolve(uriToFilePath(symbol.location.uri)) === resolve(filePath))
+      : symbols;
     const exact = await fanOut(clients, async (client) => {
       if (filePath) await client.didOpen(filePath);
       return client.workspaceSymbol(query);
     });
-    const symbols = mergeSymbols(exact.results.map((r) => r.value));
+    const symbols = inScope(mergeSymbols(exact.results.map((r) => r.value)));
     if (symbols.length > 0) {
       return { symbols, failures: exact.failures };
     }
@@ -121,7 +126,7 @@ export class SymbolResolver {
     const { member } = this.parseQualifiedName(query);
     const answering = exact.results.map((r) => r.client);
     const partial = member === query ? exact : await fanOut(answering, (client) => client.workspaceSymbol(member));
-    const partialSymbols = mergeSymbols(partial.results.map((r) => r.value));
+    const partialSymbols = inScope(mergeSymbols(partial.results.map((r) => r.value)));
     const failures = member === query ? exact.failures : [...exact.failures, ...partial.failures];
     if (partialSymbols.length > 0 || !filePath) {
       return { symbols: partialSymbols, failures };
@@ -129,7 +134,7 @@ export class SymbolResolver {
 
     const documents = await fanOut(partial.results.map((r) => r.client), (client) => client.documentSymbol(filePath));
     const lowerMember = member.toLowerCase();
-    const documentSymbols = mergeSymbols(documents.results.map((r) => r.value)).filter((symbol) =>
+    const documentSymbols = inScope(mergeSymbols(documents.results.map((r) => r.value))).filter((symbol) =>
       symbol.name.toLowerCase().includes(lowerMember) ||
       `${symbol.containerName ?? ""}.${symbol.name}`.toLowerCase().includes(lowerMember),
     );

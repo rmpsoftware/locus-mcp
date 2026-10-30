@@ -4,7 +4,7 @@ import type { LocusServerContext } from "../context.js";
 
 export const listProjectsTool = {
   name: "list_projects",
-  description: "List configured projects, their server roots, and language IDs.",
+  description: "List configured projects, their server roots, language IDs, and optional descriptions.",
   inputSchema: {
     type: "object" as const,
     properties: {},
@@ -16,6 +16,7 @@ export async function handleListProjects(ctx: LocusServerContext): Promise<CallT
     project: config.id,
     root: resolve(ctx.rootPath, config.root ?? "."),
     language: config.languageId,
+    description: config.description,
   }));
   return {
     content: [{ type: "text", text: JSON.stringify(projects) }],

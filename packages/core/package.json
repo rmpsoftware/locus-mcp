@@ -1,6 +1,6 @@
 {
   "name": "@rmpsoftware/locus-core",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "LSP client, registry, symbol layer, and format utilities for Locus — MCP server for LSP code intelligence",
   "license": "MIT",
   "type": "module",

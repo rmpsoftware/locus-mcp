@@ -17,6 +17,7 @@ Full server configuration example:
   "servers": [
     {
       "id": "typescript",
+      "description": "Frontend TypeScript project",
       "root": "frontend",
       "ignoreDirectories": ["node_modules", "dist"],
       "languageId": "typescript",
@@ -51,6 +52,7 @@ Full server configuration example:
 | Field | Required | Description |
 |-------|----------|-------------|
 | `id` | yes | Unique identifier |
+| `description` | no | Human-readable project description returned by `list_projects`; does not affect server behavior |
 | `languageId` | yes | LSP language ID sent on document open |
 | `extensions` | yes | File extensions this server handles |
 | `command` | yes | Executable name or path |
@@ -94,7 +96,7 @@ Every tool sends its request to all selected servers in parallel and combines th
 - If no server's root contains the file, no server is selected. Configure a server whose root includes the file to query a shared library outside the project.
 - `locate` by name without a `file` goes to every configured server, starting any that are not running.
 
-Use `list_projects` to discover server IDs, roots and languages. The `project` and `lang` parameters on navigation and diagnostics tools restrict selection to matching configurations; see [project and language filters](./tools.md#project-and-language-filters).
+Use `list_projects` to discover server IDs, roots, languages and optional descriptions. The `project` and `lang` parameters on navigation and diagnostics tools restrict selection to matching configurations; see [project and language filters](./tools.md#project-and-language-filters).
 
 A request waits for the slowest selected server to start, including any `initSleep`, then for its response (up to the 30-second LSP request timeout). See [how results are combined](./tools.md#multiple-language-servers).
 
@@ -118,6 +120,7 @@ Locus reads `.lsp.json` for compatibility with Claude Code Open Plugins and simi
 ```
 
 Locus converts this into an additional server entry merged with defaults.
+An optional `description` in the `languageServer` block is returned by `list_projects`.
 
 ### `servers` array
 
@@ -135,7 +138,7 @@ Locus converts this into an additional server entry merged with defaults.
 }
 ```
 
-Custom servers from `.lsp.json` are appended to the configured server list.
+Custom servers from `.lsp.json` are appended to the configured server list. Each entry can also include an optional `description`.
 
 ## Built-in language servers
 

@@ -1,5 +1,6 @@
 export interface LanguageServerConfig {
   id: string;
+  description?: string;
   root?: string;
   ignoreDirectories?: string[];
   autoOpenFiles?: string[];

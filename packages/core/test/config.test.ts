@@ -74,6 +74,7 @@ describe("loadConfig .lsp.json compatibility", () => {
     writeFileSync(join(tempDir, "locus.json"), JSON.stringify({
       root: "project", servers: [{
         id: "ts", languageId: "typescript", extensions: [".ts"], command: "mock",
+        description: "Frontend project",
         ignoreDirectories: ["generated"],
         autoOpenFiles: ["src/main.ts"],
         initSleep: 2000,
@@ -84,6 +85,7 @@ describe("loadConfig .lsp.json compatibility", () => {
     assert.deepEqual(config.servers?.[0]?.ignoreDirectories, ["generated"]);
     assert.deepEqual(createRegistry(config).getById("ts")?.autoOpenFiles, ["src/main.ts"]);
     assert.equal(createRegistry(config).getById("ts")?.initSleep, 2000);
+    assert.equal(createRegistry(config).getById("ts")?.description, "Frontend project");
   });
 
   it("converts languageServer block to server entry", () => {
@@ -91,6 +93,7 @@ describe("loadConfig .lsp.json compatibility", () => {
       join(tempDir, ".lsp.json"),
       JSON.stringify({
         languageServer: {
+          description: "Legacy project",
           command: "custom-ts-lsp",
           args: ["--stdio"],
           autoOpenFiles: ["src/main.ts"],
@@ -106,6 +109,7 @@ describe("loadConfig .lsp.json compatibility", () => {
     assert.ok(config.servers?.some((s) => s.extensions.includes(".ts")));
     assert.deepEqual(config.servers?.find((s) => s.command === "custom-ts-lsp")?.autoOpenFiles, ["src/main.ts"]);
     assert.equal(config.servers?.find((s) => s.command === "custom-ts-lsp")?.initSleep, 1500);
+    assert.equal(config.servers?.find((s) => s.command === "custom-ts-lsp")?.description, "Legacy project");
   });
 
   it("merges servers array from .lsp.json", () => {
@@ -115,6 +119,7 @@ describe("loadConfig .lsp.json compatibility", () => {
         servers: [
           {
             id: "ruby",
+            description: "Ruby project",
             languageId: "ruby",
             extensions: [".rb"],
             command: "solargraph",
@@ -131,6 +136,7 @@ describe("loadConfig .lsp.json compatibility", () => {
     assert.ok(config.servers?.some((s) => s.command === "solargraph"));
     assert.ok(config.servers?.every((s) => s.id !== "ruby" || s.autoOpenFiles?.[0] === "lib/app.rb"));
     assert.ok(config.servers?.every((s) => s.id !== "ruby" || s.initSleep === 500));
+    assert.ok(config.servers?.every((s) => s.id !== "ruby" || s.description === "Ruby project"));
   });
 
   it("loads locus.json with warm array", () => {

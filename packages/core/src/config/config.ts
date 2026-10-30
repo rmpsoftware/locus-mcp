@@ -12,6 +12,7 @@ export interface LocusConfig {
 
 export interface LspJsonManifest {
   languageServer?: {
+    description?: string;
     command?: string;
     args?: string[];
     autoOpenFiles?: string[];
@@ -20,6 +21,7 @@ export interface LspJsonManifest {
   };
   servers?: Array<{
     id?: string;
+    description?: string;
     languageId?: string;
     extensions?: string[];
     command?: string;
@@ -80,6 +82,7 @@ function convertLspJson(manifest: LspJsonManifest, existing: LocusConfig): Locus
       if (!entry.command || !entry.languageId) continue;
       servers.push({
         id: entry.id ?? entry.languageId,
+        description: entry.description,
         languageId: entry.languageId,
         extensions: entry.extensions ?? [],
         command: entry.command,
@@ -97,6 +100,7 @@ function convertLspJson(manifest: LspJsonManifest, existing: LocusConfig): Locus
 
     servers.push({
       id: languageId,
+      description: manifest.languageServer.description,
       languageId,
       extensions,
       command: manifest.languageServer.command,

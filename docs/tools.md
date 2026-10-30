@@ -32,9 +32,11 @@ Call `list_projects` with `{}` to list every configured server without starting 
 
 ```json
 [
-  { "project": "api", "root": "/repo/services/api", "language": "csharp" }
+  { "project": "api", "root": "/repo/services/api", "language": "csharp", "description": "API project" }
 ]
 ```
+
+`description` is included only when configured for the server.
 
 `root` is the absolute resolved server root, including the project root when no server root is configured. `language` is the value accepted by the `lang` filter. Multiple configurations can have the same ID; the filter selects all matches.
 
@@ -159,11 +161,15 @@ Get type information and documentation for a symbol or position.
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `name` | string | Resolve symbol by name (requires `file`) |
+| `name` | string | Resolve a symbol within `file` (requires `file`) |
 | `file` | string | File path |
-| `line` | number | 0-based line |
-| `character` | number | 0-based character |
-| `position` | string | Shorthand `path:line:col` |
+| `line` | integer | 0-based line |
+| `character` | integer | 0-based UTF-16 code-unit offset |
+| `position` | string | Shorthand `path:line:col` (1-based line and UTF-16 column) |
+
+Coordinates must be non-negative integers, or positive integers in the shorthand.
+The file is opened or synchronized before hover when the server supports document synchronization;
+servers may still be indexing.
 
 **Example — by position**
 

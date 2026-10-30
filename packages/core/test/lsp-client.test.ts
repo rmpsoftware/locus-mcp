@@ -178,7 +178,7 @@ describe("LspClient (mocked connection)", () => {
     assert.equal(events[0]?.method, "textDocument/didOpen");
     assert.equal(events[1]?.method, "textDocument/didChange");
     const versions = events.map((n) => (n.params as { textDocument: { version: number } }).textDocument.version);
-    assert.deepEqual(versions, [1, 2, 3]);
+    assert.deepEqual(versions, [1, 2]);
     await client.stop();
     writeFileSync(file, "after stop");
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -460,6 +460,98 @@ describe("LspClient (mocked connection)", () => {
     await client.start();
     const hover = await client.hover(join(tempDir, "index.ts"), 0, 6);
     assert.ok(hover?.contents);
+  });
+
+  it("opens before hover and avoids redundant document changes", async () => {
+    const events: string[] = [];
+    const connection = createMockConnection({
+      onRequest: (method) => {
+        events.push(method);
+        return method === "initialize" ? { capabilities: {} } : { contents: "hover" };
+      },
+      onNotify: (method) => events.push(method),
+    });
+    (client as unknown as { connection: LspConnection }).connection = connection;
+    const file = join(tempDir, "index.ts");
+    await client.hover(file, 0, 0);
+    await client.hover(file, 0, 0);
+    assert.deepEqual(events, ["initialize", "initialized", "textDocument/didOpen", "textDocument/hover", "textDocument/hover"]);
+  });
+
+  it("sends a valid incremental replacement before hover when disk contents change", async () => {
+    const events: Array<{ method: string; params: unknown }> = [];
+    const connection = createMockConnection({
+      onRequest: (method, params) => {
+        events.push({ method, params });
+        return method === "initialize"
+          ? { capabilities: { textDocumentSync: { openClose: true, change: 2 } } }
+          : { contents: "hover" };
+      },
+      onNotify: (method, params) => events.push({ method, params }),
+    });
+    (client as unknown as { connection: LspConnection }).connection = connection;
+    const file = join(tempDir, "index.ts");
+    writeFileSync(file, "first\r\n🙂x");
+    await client.hover(file, 0, 0);
+    writeFileSync(file, "updated");
+    await client.hover(file, 0, 0);
+    const changeIndex = events.findIndex((event) => event.method === "textDocument/didChange");
+    assert.ok(changeIndex > 0);
+    assert.deepEqual((events[changeIndex]!.params as { contentChanges: unknown[] }).contentChanges, [{
+      range: { start: { line: 0, character: 0 }, end: { line: 1, character: 3 } },
+      text: "updated",
+    }]);
+    assert.equal(events[changeIndex + 1]?.method, "textDocument/hover");
+  });
+
+  it("reopens changed documents when the server only supports open and close", async () => {
+    const events: string[] = [];
+    const connection = createMockConnection({
+      onRequest: (method) => {
+        events.push(method);
+        return method === "initialize" ? { capabilities: { textDocumentSync: { openClose: true, change: 0 } } } : null;
+      },
+      onNotify: (method) => events.push(method),
+    });
+    (client as unknown as { connection: LspConnection }).connection = connection;
+    const file = join(tempDir, "index.ts");
+    await client.hover(file, 0, 0);
+    writeFileSync(file, "updated");
+    await client.hover(file, 0, 0);
+    assert.deepEqual(events.slice(-3), ["textDocument/didClose", "textDocument/didOpen", "textDocument/hover"]);
+  });
+
+  it("uses full changes when the server advertises full synchronization", async () => {
+    const notifications: Array<{ method: string; params: unknown }> = [];
+    const connection = createMockConnection({
+      onRequest: (method) => method === "initialize" ? { capabilities: { textDocumentSync: 1 } } : null,
+      onNotify: (method, params) => notifications.push({ method, params }),
+    });
+    (client as unknown as { connection: LspConnection }).connection = connection;
+    const file = join(tempDir, "index.ts");
+    await client.hover(file, 0, 0);
+    writeFileSync(file, "updated");
+    await client.hover(file, 0, 0);
+    const change = notifications.find((event) => event.method === "textDocument/didChange");
+    assert.deepEqual((change?.params as { contentChanges: unknown[] }).contentChanges, [{ text: "updated" }]);
+  });
+
+  it("does not send synchronization notifications when the server declines them", async () => {
+    const events: string[] = [];
+    const connection = createMockConnection({
+      onRequest: (method) => method === "initialize" ? { capabilities: { textDocumentSync: 0 } } : null,
+      onNotify: (method) => events.push(method),
+    });
+    (client as unknown as { connection: LspConnection }).connection = connection;
+    const file = join(tempDir, "index.ts");
+    await client.hover(file, 0, 0);
+    await assert.rejects(client.didChange(file, "unsaved"), /does not support synchronizing unsaved changes/);
+    assert.deepEqual(events, ["initialized"]);
+  });
+
+  it("reports a missing file instead of opening an empty document", async () => {
+    await assert.rejects(client.hover(join(tempDir, "missing.ts"), 0, 0), /ENOENT/);
+    assert.equal(notifications.some((n) => n.method === "textDocument/didOpen"), false);
   });
 
   it("prepares and executes rename", async () => {
